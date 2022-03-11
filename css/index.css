@@ -3670,7 +3670,7 @@ span.categoryBar-list-count::after {
   right: -100%;
 }
 li.categoryBar-list-item:nth-child(1) {
-  background: /img/bg1.JPG;
+  background: url('/img/bg1.JPG');
 }
 li.categoryBar-list-item:nth-child(2) {
   background: #abcdef;
@@ -3686,10 +3686,10 @@ li.categoryBar-list-item:nth-child(4) {
   background: linear-gradient(rgba(0, 0, 0, 0.4) 25%, rgba(200,16 , 16, 0) 100%);
 }
 li.categoryBar-list-item:nth-child(5) {
-  background: /img/bg2.JPG;
+  background: url('/img/bg2.JPG');
 }
 li.categoryBar-list-item:nth-child(6) {
-  background: /img/bg3.JPG;
+  background: url('/img/bg3.JPG');
 }
 li.categoryBar-list-item:nth-child(1)>span::after {
   content: 'Oracle' !important;
