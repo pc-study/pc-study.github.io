@@ -3670,35 +3670,10 @@ span.categoryBar-list-count::after {
   right: -100%;
 }
 li.categoryBar-list-item:nth-child(1) {
-  background: url('/img/bg1.JPG');
-}
-li.categoryBar-list-item:nth-child(2) {
-  background: #abcdef;
-}
-li.categoryBar-list-item:nth-child(3) {
-  background: rgba(45,67,89,0.7);
-}
-li.categoryBar-list-item:nth-child(4) {
-  background: -webkit-linear-gradient(rgba(0, 0, 0, 0.4) 25%, rgba(200,16 , 16, 0) 100%);
-  background: -moz-linear-gradient(rgba(0, 0, 0, 0.4) 25%, rgba(200,16 , 16, 0) 100%);
-  background: -o-linear-gradient(rgba(0, 0, 0, 0.4) 25%, rgba(200,16 , 16, 0) 100%);
-  background: -ms-linear-gradient(rgba(0, 0, 0, 0.4) 25%, rgba(200,16 , 16, 0) 100%);
-  background: linear-gradient(rgba(0, 0, 0, 0.4) 25%, rgba(200,16 , 16, 0) 100%);
-}
-li.categoryBar-list-item:nth-child(5) {
-  background: url('/img/bg2.JPG');
-}
-li.categoryBar-list-item:nth-child(6) {
-  background: url('/img/bg3.JPG');
+  background: ;
 }
 li.categoryBar-list-item:nth-child(1)>span::after {
-  content: 'Oracle' !important;
-}
-li.categoryBar-list-item:nth-child(2)>span::after {
-  content: 'MySQL' !important;
-}
-li.categoryBar-list-item:nth-child(3)>span::after {
-  content: 'Hexo' !important;
+  content: '' !important;
 }
 li.categoryBar-list-item {
   width: 32.3% !important;
