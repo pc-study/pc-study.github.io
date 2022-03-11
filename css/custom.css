@@ -65,7 +65,7 @@ svg.icon.festival-decoration {
   font-display : swap;
 }
 
-div#site-title {
+h1#site-title {
   font-family: 'Candyhome', sans-serif;
   /*font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Lato, Roboto, "PingFang SC", "STZhongsong", "Lantinghei SC", sans-serif;*/
 }
@@ -212,4 +212,9 @@ ul.menus_item_child {
 /* 调整空隙，确保不会天下武功唯快不破 */
 #nav .menus_items .menus_item .menus_item_child {
   margin-top: 0px !important;
+}
+
+/* 搜索框圆角 */
+.search-dialog {
+    border-radius: 10px;
 }
