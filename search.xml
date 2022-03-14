@@ -15,9 +15,9 @@
           
           <category> Linux </category>
           
-          <category> redhat7 </category>
-          
           <category> Oracle </category>
+          
+          <category> redhat7 </category>
           
           <category> RAC </category>
           
@@ -32,9 +32,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> 19C </tag>
-            
             <tag> RAC </tag>
+            
+            <tag> 19C </tag>
             
         </tags>
       
