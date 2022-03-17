@@ -40,9 +40,9 @@
           
           <category> Oracle </category>
           
-          <category> 11GR2 </category>
-          
           <category> RAC </category>
+          
+          <category> 11GR2 </category>
           
           <category> DataGuard </category>
           
@@ -81,9 +81,9 @@
           
           <category> Oracle </category>
           
-          <category> redhat7 </category>
-          
           <category> RAC </category>
+          
+          <category> redhat7 </category>
           
           <category> 19C </category>
           
@@ -96,9 +96,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> 19C </tag>
-            
             <tag> RAC </tag>
+            
+            <tag> 19C </tag>
             
         </tags>
       
