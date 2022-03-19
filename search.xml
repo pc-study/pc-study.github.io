@@ -75,9 +75,9 @@
           
           <category> Oracle </category>
           
-          <category> RAC </category>
-          
           <category> DataGuard </category>
+          
+          <category> RAC </category>
           
           <category> 11GR2 </category>
           
@@ -311,9 +311,9 @@
       
         <tags>
             
-            <tag> Hexo </tag>
-            
             <tag> Butterfly </tag>
+            
+            <tag> Hexo </tag>
             
         </tags>
       
