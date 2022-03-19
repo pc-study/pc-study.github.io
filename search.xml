@@ -119,9 +119,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> DataGuard </tag>
-            
             <tag> 19C </tag>
+            
+            <tag> DataGuard </tag>
             
         </tags>
       
@@ -183,9 +183,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> DataGuard </tag>
-            
             <tag> RAC </tag>
+            
+            <tag> DataGuard </tag>
             
             <tag> RMAN </tag>
             
@@ -205,13 +205,13 @@
       
       <categories>
           
-          <category> Oracle </category>
-          
           <category> Linux </category>
           
-          <category> RAC </category>
+          <category> Oracle </category>
           
           <category> redhat7 </category>
+          
+          <category> RAC </category>
           
           <category> 19C </category>
           
@@ -220,13 +220,13 @@
       
         <tags>
             
-            <tag> Oracle </tag>
-            
-            <tag> RAC </tag>
-            
             <tag> Linux </tag>
             
+            <tag> Oracle </tag>
+            
             <tag> 19C </tag>
+            
+            <tag> RAC </tag>
             
         </tags>
       
@@ -294,9 +294,9 @@
       
       <categories>
           
-          <category> Oracle </category>
-          
           <category> Linux </category>
+          
+          <category> Oracle </category>
           
           <category> RAC </category>
           
@@ -307,11 +307,11 @@
       
         <tags>
             
+            <tag> Linux </tag>
+            
             <tag> Oracle </tag>
             
             <tag> RAC </tag>
-            
-            <tag> Linux </tag>
             
             <tag> 12C </tag>
             
@@ -331,9 +331,9 @@
       
       <categories>
           
-          <category> Oracle </category>
-          
           <category> Linux </category>
+          
+          <category> Oracle </category>
           
           <category> RAC </category>
           
@@ -344,11 +344,11 @@
       
         <tags>
             
+            <tag> Linux </tag>
+            
             <tag> Oracle </tag>
             
             <tag> RAC </tag>
-            
-            <tag> Linux </tag>
             
         </tags>
       
