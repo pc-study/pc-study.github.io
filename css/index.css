@@ -3822,6 +3822,13 @@ div#quit-box {
 [data-theme="dark"] div#quit-box {
   background: rgba(147,146,128,0.3);
 }
+.card-tags.fixed-card-widget .card-tag-cloud {
+  max-height: 460px;
+  overflow: scroll;
+}
+.card-tags.fixed-card-widget .card-tag-cloud::-webkit-scrollbar_color {
+  display: none;
+}
 @-moz-keyframes rotateX {
   from {
     -webkit-transform: rotateX(90deg);
