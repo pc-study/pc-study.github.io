@@ -281,6 +281,15 @@ ul.menus_item_child {
     border-radius: 10px;
 }
 
+/*针对标签卡片做样式兼容适配*/
+.card-tags
+  &.fixed-card-widget
+    .card-tag-cloud
+      max-height 460px
+      overflow scroll
+      &::-webkit-scrollbar_color
+        display: none
+
 /*10s为加载动画的时间，1为加载动画的次数，ease-in-out为动画效果*/
 /*#page-header,
 #web_bg {
