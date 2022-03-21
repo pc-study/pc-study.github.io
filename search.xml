@@ -226,9 +226,9 @@
           
           <category> Oracle </category>
           
-          <category> DataGuard </category>
-          
           <category> RAC </category>
+          
+          <category> DataGuard </category>
           
           <category> RMAN </category>
           
@@ -263,13 +263,13 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
           
-          <category> redhat7 </category>
+          <category> Linux </category>
           
           <category> RAC </category>
+          
+          <category> redhat7 </category>
           
           <category> 19C </category>
           
@@ -352,9 +352,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> RAC </category>
           
@@ -389,9 +389,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> RAC </category>
           
