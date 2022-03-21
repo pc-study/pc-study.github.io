@@ -226,11 +226,11 @@
           
           <category> Oracle </category>
           
-          <category> RMAN </category>
-          
           <category> DataGuard </category>
           
           <category> RAC </category>
+          
+          <category> RMAN </category>
           
           <category> 11GR2 </category>
           
@@ -263,13 +263,13 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
           
-          <category> redhat7 </category>
+          <category> Linux </category>
           
           <category> RAC </category>
+          
+          <category> redhat7 </category>
           
           <category> 19C </category>
           
@@ -352,9 +352,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> RAC </category>
           
@@ -389,9 +389,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> RAC </category>
           
@@ -462,9 +462,9 @@
       
         <tags>
             
-            <tag> Hexo </tag>
-            
             <tag> Butterfly </tag>
+            
+            <tag> Hexo </tag>
             
         </tags>
       
