@@ -3716,10 +3716,17 @@ h1.page-title + .tag-cloud-list {
   overflow: scroll;
 }
 .card-shuo.fixed-card-widget #artitalk_main::-webkit-scrollbar {
-  width: 0;
+  display: none;
 }
 .card-shuo.fixed-card-widget #operare_artitalk .c2 {
-  z-index: 998;
+  z-index: 1000;
+}
+.card-tags.fixed-card-widget .card-tag-cloud {
+  max-height: 460px;
+  overflow: scroll;
+}
+.card-tags.fixed-card-widget .card-tag-cloud::-webkit-scrollbar {
+  display: none;
 }
 @media screen and (max-width: 768px) {
   div#fixedcard-dashboard {
@@ -3821,13 +3828,6 @@ div#quit-box {
 }
 [data-theme="dark"] div#quit-box {
   background: rgba(147,146,128,0.3);
-}
-.card-tags.fixed-card-widget .card-tag-cloud {
-  max-height: 460px;
-  overflow: scroll;
-}
-.card-tags.fixed-card-widget .card-tag-cloud::-webkit-scrollbar_color {
-  display: none;
 }
 @-moz-keyframes rotateX {
   from {
