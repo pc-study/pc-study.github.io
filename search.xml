@@ -4,6 +4,37 @@
   
     
     <entry>
+      <title>简单使用：Oracle数据库一键自动化部署SHELL脚本</title>
+      <link href="/post/642e39e8.html"/>
+      <url>/post/642e39e8.html</url>
+      
+        <content type="html"><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我猜很多朋友拿到脚本后一脸懵逼，不知道如何下手，所以打算先教大家用脚本以最便捷的方式在 Linux 上安装一套 Oracle 数据库。</p><p>使用脚本的流程可以参照下方：</p><p><img src="https://img-blog.csdnimg.cn/20210603100942949.png"></p><ul><li><strong>Linux 系统安装可以参考：<a href="https://www.modb.pro/course/article/142?lsId=5898">保姆级 VirtualBox 虚拟机安装 Linux 系统</a></strong></li></ul><p>确保我们已经安装配置好 Linux 系统之后，<strong>就可以直接上命令： <code>./OracleShellInstall.sh -i 10.211.55.100</code></strong></p><p><strong>📢 注意： 最便捷安装方式，默认参数不设置，只需加上主机 IP，即可一键安装 Oracle 数据库。</strong></p><h1 id="环境初始化配置"><a href="#环境初始化配置" class="headerlink" title="环境初始化配置"></a>环境初始化配置</h1><p>本节详细讲解下脚本执行前需要做的一些预配置操作。</p><h2 id="创建软件目录"><a href="#创建软件目录" class="headerlink" title="创建软件目录"></a>创建软件目录</h2><p>软件目录用来存放 Oracle 安装所需的所有软件以及脚本：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /soft</span><br></pre></td></tr></table></figure><p>本文以 &#x2F;soft 为例，以后均以此目录作为演示。</p><h2 id="挂载-Linux-安装镜像"><a href="#挂载-Linux-安装镜像" class="headerlink" title="挂载 Linux 安装镜像"></a>挂载 Linux 安装镜像</h2><p>安装 Oracle 数据库需要安装一些 rpm 依赖包，因此需要挂载 ISO 镜像来配置本地 yum 源：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## 1.通过cdrom挂载</span></span><br><span class="line">mount /dev/cdrom /mnt</span><br><span class="line"><span class="comment">## 2.通过安装镜像源挂载</span></span><br><span class="line">mount -o loop /soft/rhel-server-7.9-x86_64-dvd.iso /mnt</span><br></pre></td></tr></table></figure><p><img src="https://img-blog.csdnimg.cn/20210603104047853.png"></p><h2 id="上传安装介质和脚本到软件目录"><a href="#上传安装介质和脚本到软件目录" class="headerlink" title="上传安装介质和脚本到软件目录"></a>上传安装介质和脚本到软件目录</h2><p>本次演示以     11GR2 为例，上传 DB 安装包和脚本：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## 一键安装shell脚本</span></span><br><span class="line">140KOracleShellInstall.sh</span><br><span class="line"><span class="comment">## oracle 11GR2官方安装包</span></span><br><span class="line">1.3Gp13390677_112040_Linux-x86-64_1of7.zip</span><br><span class="line">1.1Gp13390677_112040_Linux-x86-64_2of7.zip</span><br><span class="line"><span class="comment">## 授权脚本执行权限</span></span><br><span class="line"><span class="built_in">chmod</span> +x OracleShellInstall.sh</span><br></pre></td></tr></table></figure><p><img src="https://img-blog.csdnimg.cn/20210603104132703.png"></p><h2 id="执行安装"><a href="#执行安装" class="headerlink" title="执行安装"></a>执行安装</h2><p>确保以上步骤均已完成后，开始执行脚本安装：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./OracleShellInstall.sh -i 10.211.55.100</span><br></pre></td></tr></table></figure><p><img src="https://img-blog.csdnimg.cn/20210603104254309.png"></p><p><strong>等待5-10分钟左右，安装成功。</strong></p><p><img src="https://img-blog.csdnimg.cn/2021060310483362.png"></p><p><img src="https://img-blog.csdnimg.cn/20210603105049292.png"></p><h2 id="数据库连接使用"><a href="#数据库连接使用" class="headerlink" title="数据库连接使用"></a>数据库连接使用</h2><p>创建连接用户：</p><p><img src="https://img-blog.csdnimg.cn/20210603110123160.png"></p><p>PLSQL 连接：</p><ul><li>PLSQL的安装使用可以参考：<a href="https://www.modb.pro/course/article/142?lsId=5898">PL&#x2F;SQL Developer 安装与配置</a></li></ul><p><img src="https://img-blog.csdnimg.cn/20210603110313601.png"></p><p><img src="https://img-blog.csdnimg.cn/2021060311050120.png"></p><p>至此，体验结束！</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Oracle </category>
+          
+          <category> 11GR2 </category>
+          
+          <category> 脚本 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Oracle </tag>
+            
+            <tag> 脚本 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Linux 安装 Oracle 11GR2 数据库保姆级教程</title>
       <link href="/post/6c26f851.html"/>
       <url>/post/6c26f851.html</url>
@@ -226,9 +257,9 @@
           
           <category> Oracle </category>
           
-          <category> DataGuard </category>
-          
           <category> RMAN </category>
+          
+          <category> DataGuard </category>
           
           <category> RAC </category>
           
@@ -263,9 +294,9 @@
       
       <categories>
           
-          <category> Oracle </category>
-          
           <category> Linux </category>
+          
+          <category> Oracle </category>
           
           <category> redhat7 </category>
           
@@ -352,9 +383,9 @@
       
       <categories>
           
-          <category> Oracle </category>
-          
           <category> Linux </category>
+          
+          <category> Oracle </category>
           
           <category> RAC </category>
           
@@ -389,9 +420,9 @@
       
       <categories>
           
-          <category> Oracle </category>
-          
           <category> Linux </category>
+          
+          <category> Oracle </category>
           
           <category> RAC </category>
           
