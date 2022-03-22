@@ -12,7 +12,7 @@ workbox.core.clientsClaim();
 
 // 注册成功后要立即缓存的资源列表
 // 具体缓存列表在gulpfile.js中配置，见下文
-workbox.precaching.precacheAndRoute([{"revision":"dd0d7a5e2cac910c98d09f608b388692","url":"./404.html"},{"revision":"d44c6c9c0b9dea2fa1c711fbc2118472","url":"./index.html"},{"revision":"c2d6628801fd2dc0ea1739901cf5d99b","url":"./js/main.js"},{"revision":"d997d3e30f90ee31730b334c73530092","url":"./css/index.css"}],{
+workbox.precaching.precacheAndRoute([{"revision":"6fa05d46f82a6e5d1b36d15f23dd0190","url":"./404.html"},{"revision":"0ab49a32ceae0e72563412b9916f0bb8","url":"./index.html"},{"revision":"c2d6628801fd2dc0ea1739901cf5d99b","url":"./js/main.js"},{"revision":"d997d3e30f90ee31730b334c73530092","url":"./css/index.css"}],{
     directoryIndex: null
 });
 
