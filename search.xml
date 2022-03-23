@@ -4,6 +4,37 @@
   
     
     <entry>
+      <title>参数详解：Oracle数据库一键自动化部署SHELL脚本</title>
+      <link href="/post/b7c5ea64.html"/>
+      <url>/post/b7c5ea64.html</url>
+      
+        <content type="html"><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>在开始讲 Oracle 一键安装脚本之前，我们先简单了解下Oracle单机的通常部署流程：</p><ul><li>安装Linux操作系统</li><li>配置存储，网络</li><li>配置操作系统服务和参数等</li><li>配置Oracle相关用户目录等</li><li>上传解压安装介质</li><li>安装Oracle软件</li><li>创建数据库实例</li><li>数据库实例优化和配置等</li></ul><p><img src="https://img-blog.csdnimg.cn/20210613232723502.png"></p><p>通过上述流程介绍可以发现整个过程的操作步骤涉及很多，如果一行一行命令进行执行安装，即使有标准安装文档，复制粘贴也需要 <font color='red'><b>至少半天</b></font> 的时间完成整个安装。然而，通过 <font color='blue'><b>自动化部署脚本</b></font> 可以轻松在 <font color='red'><b>1小时以内</b></font> 完成整个安装过程，并且整个安装过程 <font color='blue'><b>无需人工干预</b></font>。</p><p>因此自动化部署脚本的由来其实很简单，如上所述：就是为了追求效率，稳定。换种说法就是：偷懒，解放双手。</p><p>有句话说得好：**<font color='red'>“懒人”推动世界的发展</font>**。</p><h2 id="脚本实现"><a href="#脚本实现" class="headerlink" title="脚本实现"></a>脚本实现</h2><p>说到脚本的实现，由于日常工作中接触 Linux 系统较多，因此在实现脚本时选择了 <strong><font color='blue'>Shell命令</font></strong> 进行编写，并且仅支持 Linux 操作系统的安装。</p><h3 id="脚本实现过程"><a href="#脚本实现过程" class="headerlink" title="脚本实现过程"></a>脚本实现过程</h3><ul><li>大量的 Oracle 安装部署经验</li><li>标准的 Oracle 安装实施文档</li><li>参考 Oracle 官方文档</li><li>熟悉 Shell 命令的使用</li><li>严谨的程序逻辑思维</li><li>理清 Oracle 安装完整步骤顺序</li><li>按功能模块列出 Oracle 安装步骤</li><li>通过脚本实现各个功能模块</li><li>将所有功能模块组装为一个整体</li><li>无数次的安装测试以及调试修改</li></ul><p>经过一段漫长的测试和部署之后，成熟版本的 Oracle 一键安装脚本就诞生了！</p><h1 id="脚本介绍"><a href="#脚本介绍" class="headerlink" title="脚本介绍"></a>脚本介绍</h1><p>下面我们主要介绍下脚本的功能和参数。</p><h2 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h2><ul><li>支持 Oracle 版本：11GR2、12C、18C、19C</li><li>支持 Linux 版本(x86_64)：6、7、8</li><li>支持安装模式：单机，单机集群，RAC</li><li>帮助命令查看参数</li><li>安装日志记录</li><li>配置操作系统</li><li>安装 Grid 软件</li><li>安装 Oracle 软件</li><li>安装 PSU&amp;&amp;RU 补丁</li><li>创建数据库</li><li>建库后配置优化</li></ul><p><strong>以上列举的功能为主要功能，更多功能将通过参数介绍一一列出。</strong></p><h2 id="参数介绍"><a href="#参数介绍" class="headerlink" title="参数介绍"></a>参数介绍</h2><p><strong>本脚本通过参数来预配置脚本命令，可通过帮助命令来查看有哪些参数：</strong></p><blockquote><p>通过执行 <code>./OracleShellInstall --help</code> 可以查看参数介绍！</p></blockquote><p>主要参数如下所示：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">-i,--PUBLICIPPUBLICIP NETWORK ADDRESS</span><br><span class="line">-n,--HOSTNAMEHOSTNAME(orcl)</span><br><span class="line">-o,--ORACLE_SIDORACLE_SID(orcl)</span><br><span class="line">-c,--ISCDBIS CDB OR NOT(TRUE|FALSE)</span><br><span class="line">-pb,--PDBNAMEPDBNAME</span><br><span class="line">-op,--ORAPASSWDORACLE USER PASSWORD(oracle)</span><br><span class="line">-b,--ENV_BASE_DIRORACLE BASE DIR(/u01/app)</span><br><span class="line">-s,--CHARACTERSETORACLE CHARACTERSET(ZHS16GBK|AL32UTF8)</span><br><span class="line">-rs,--ROOTPASSWDROOT USER PASSWORD</span><br><span class="line">-gp,--GRIDPASSWDGRID USER PASSWORD(oracle)</span><br><span class="line">-pb1,--RAC1PUBLICIPRAC NODE ONE PUBLIC IP</span><br><span class="line">-pb2,--RAC2PUBLICIPRAC NODE SECONED PUBLIC IP</span><br><span class="line">-vi1,--RAC1VIPRAC NODE ONE VIRTUAL IP</span><br><span class="line">-vi2,--RAC2VIPRAC NODE SECOND VIRTUAL IP</span><br><span class="line">-pi1,--RAC1PRIVIPRAC NODE ONE PRIVATE IP</span><br><span class="line">-pi2,--RAC2PRIVIPRAC NODE SECOND PRIVATE IP</span><br><span class="line">-pi3,--RAC1PRIVIP1RAC NODE ONE PRIVATE IP</span><br><span class="line">-pi4,--RAC2PRIVIP1RAC NODE SECOND PRIVATE IP</span><br><span class="line">-puf,--RACPUBLICFCNAME        RAC PUBLIC FC NAME</span><br><span class="line">-prf,--RACPRIVFCNAMERAC PRIVATE FC NAME</span><br><span class="line">-prf1,--RACPRIVFCNAME1RAC PRIVATE FC NAME</span><br><span class="line">-si,--RACSCANIPRAC SCAN IP</span><br><span class="line">-dn,--ASMDATANAMERAC ASM DATADISKGROUP NAME(DATA)</span><br><span class="line">-on,--ASMOCRNAMERAC ASM OCRDISKGROUP NAME(OCR)</span><br><span class="line">-<span class="built_in">dd</span>,--DATA_BASEDISKRAC DATADISK DISKNAME</span><br><span class="line">-<span class="built_in">od</span>,--OCRP_BASEDISKRAC OCRDISK DISKNAME</span><br><span class="line">-or,--OCRREDUNRAC OCR REDUNDANCY(EXTERNAL|NORMAL|HIGH)</span><br><span class="line">-dr,--DATAREDUNRAC DATA REDUNDANCY(EXTERNAL|NORMAL|HIGH)</span><br><span class="line">-tsi,   --TIMESERVERIP              RAC TIME SERVER IP</span><br><span class="line">-txh    --TuXingHua                 Tu Xing Hua Install</span><br><span class="line">-udev   --UDEV                      Whether Auto Set UDEV</span><br><span class="line">-dns    --DNS                       RAC CONFIGURE DNS(Y|N)</span><br><span class="line">-dnss   --DNSSERVER                 RAC CONFIGURE DNSSERVER LOCAL(Y|N)</span><br><span class="line">-dnsn   --DNSNAME                   RAC DNSNAME(orcl.com)</span><br><span class="line">-dnsi   --DNSIP                     RAC DNS IP</span><br><span class="line">-m,--ONLYCONFIGOSONLY CONFIG SYSTEM PARAMETER(Y|N)</span><br><span class="line">-g,--ONLYINSTALLGRID ONLY INSTALL GRID SOFTWARE(Y|N)</span><br><span class="line">-w,--ONLYINSTALLORACLE ONLY INSTALL ORACLE SOFTWARE(Y|N)</span><br><span class="line">-ocd,--ONLYCREATEDB        ONLY CREATE DATABASE(Y|N)</span><br><span class="line">-gpa,--GRID RELEASE UPDATEGRID RELEASE UPDATE(32072711)</span><br><span class="line">-opa,--ORACLE RELEASE UPDATEORACLE RELEASE UPDATE(32072711)</span><br></pre></td></tr></table></figure><p><strong><font color='blue'>看到上面的参数，是否感觉参数太多，但是这些参数基本都有用，容我一个个慢慢道来：</font></strong></p><p><code>-i</code>  全称 PUBLICIP：当前主机用于访问的IP，**<font color='red'>必填参数</font>**</p><blockquote><p>使用方式：<code>-i 10.211.55.100</code></p></blockquote><p><code>-n</code> 全称 HOSTNAME：当前主机的主机名，默认值为 orcl。</p><blockquote><p>使用方式：<code>-n orcl</code><br>如果选择rac模式，节点1、2主机名自动取为：orcl01、orcl02。<br><img src="https://img-blog.csdnimg.cn/20210614005440752.png" alt="rac主机名"></p></blockquote><p><code>-o</code> 全称 ORACLE_SID：Oracle实例名称，默认值为 orcl。</p><blockquote><p>使用方式：<code>-o orcl</code></p></blockquote><p><code>-c</code> 全称 ISCDB：判断是否为CDB模式，11GR2不支持该参数，默认值为FALSE。</p><blockquote><p>使用方式：<code>-c TRUE</code></p></blockquote><p><code>-pb</code> 全称 PDBNAME：创建PDB的名称，11GR2不支持该参数。</p><blockquote><p>使用方式：<code>-pb pdb01</code></p></blockquote><p><code>-op</code> 全称 ORAPASSWD：oracle用户的密码，默认值为oracle。</p><blockquote><p>使用方式：<code>-op oracle</code></p></blockquote><p><code>-b</code> 全称 ENV_BASE_DIR：Oracle基础安装目录，默认值为&#x2F;u01&#x2F;app。</p><blockquote><p>使用方式：<code>-b /u01/app</code></p></blockquote><p><code>-s</code> 全称 CHARACTERSET：Oracle数据库字符集，默认值为AL32UTF8。</p><blockquote><p>使用方式：<code>-s AL32UTF8</code></p></blockquote><p><strong><font color='blue'>以下为RAC模式安装的参数：</font></strong></p><p><code>-rs</code> 全称 ROOTPASSWD：root用户的密码，默认值为oracle。</p><blockquote><p>使用方式：<code>-rs oracle</code></p></blockquote><p><code>-gp</code> 全称 GRIDPASSWD：grid用户的密码，默认值为oracle。</p><blockquote><p>使用方式：<code>-gp oracle</code></p></blockquote><p><code>-pb1</code> 全称 RAC1PUBLICIP：节点一的主机访问IP，**<font color='red'>必填参数</font>** 。</p><blockquote><p>使用方式：<code>-pb1 10.211.55.100</code></p></blockquote><p><code>-pb2</code> 全称 RAC2PUBLICIP：节点二的主机访问IP，**<font color='red'>必填参数</font>** 。</p><blockquote><p>使用方式：<code>-pb2 10.211.55.101</code></p></blockquote><p><code>-vi1</code> 全称 RAC1VIP：节点一的主机虚拟IP，**<font color='red'>必填参数</font>** ，与主机访问IP网段必须相同。</p><blockquote><p>使用方式：<code>-vi1 10.211.55.102</code></p></blockquote><p><code>-vi2</code> 全称 RAC2VIP：节点二的主机虚拟IP，**<font color='red'>必填参数</font>** ，与主机访问IP网段必须相同。</p><blockquote><p>使用方式：<code>-vi2 10.211.55.103</code></p></blockquote><p><code>-pi1</code> 全称 ：RAC1PRIVIP，节点一的主机私有IP，**<font color='red'>必填参数</font>** ，可凭借喜好进行自定义。</p><blockquote><p>使用方式：<code>-pi1 10.10.1.1</code></p></blockquote><p><code>-pi2</code> 全称 ：RAC2PRIVIP，节点二的主机私有IP，**<font color='red'>必填参数</font>** ，可凭借喜好进行自定义。</p><blockquote><p>使用方式：<code>-pi2 10.10.1.2</code></p></blockquote><p><code>-pi3</code> 全称 ：RAC1PRIVIP1，节点一的第二个主机私有IP，**<font color='blue'>可选参数</font>** ，可凭借喜好进行自定义。</p><blockquote><p>使用方式：<code>-pi3 1.1.1.1</code></p></blockquote><p><code>-pi4</code> 全称 ：RAC2PRIVIP1，节点二的第二个主机私有IP，**<font color='blue'>可选参数</font>** ，可凭借喜好进行自定义。</p><blockquote><p>使用方式：<code>-pi4 1.1.1.2</code></p></blockquote><p><code>-puf</code> 全称 ：RACPUBLICFCNAME，主机的访问IP对应的网卡名称，**<font color='red'>必填参数</font>** ，节点1，2必须名称一致。</p><blockquote><p>使用方式：<code>-puf eth0</code></p></blockquote><p><code>-prf</code> 全称 RACPRIVFCNAME：主机的私有IP对应的网卡名称，**<font color='red'>必填参数</font>**  ，节点1，2必须名称一致。</p><blockquote><p>使用方式：<code>-prf eth1</code></p></blockquote><p><code>-prf1</code> 全称 RACPRIVFCNAME1：主机的第二私有IP对应的网卡名称，**<font color='blue'>可选参数</font>**  ，节点1，2必须名称一致。</p><blockquote><p>使用方式：<code>-prf1 eth2</code></p></blockquote><p><code>-si</code> 全称 RACSCANIP：主机的SCANIP，**<font color='red'>必填参数</font>** ，与主机访问IP网段必须相同。当配置DNS解析时，最多可支持填写3个IP，通过逗号隔开。</p><blockquote><p>使用方式：<code>-si 10.211.55.104,10.211.55.105,10.211.55.106</code></p></blockquote><p><code>-dn</code> 全称 ASMDATANAME：ASM数据盘名称，默认值为DATA。</p><blockquote><p>使用方式：<code>-dn DATA</code></p></blockquote><p><code>-on</code> 全称 ASMOCRNAME：ASM裁决盘名称，默认值为OCR。</p><blockquote><p>使用方式：<code>-on OCR</code></p></blockquote><p><code>-dd</code> 全称 DATA_BASEDISK：数据盘对应的磁盘名称，**<font color='red'>必填参数</font>** 。支持多块磁盘填写，用逗号隔开。</p><blockquote><p>使用方式：<code>-dd /dev/sdb,/dev/sdc,/dev/sdd</code></p></blockquote><p><code>-od</code> 全称 OCR_BASEDISK：裁决盘对应的磁盘名称，**<font color='red'>必填参数</font>** 。支持多块磁盘填写，用逗号隔开。</p><blockquote><p>使用方式：<code>-od /dev/sde,/dev/sdf</code></p></blockquote><p><code>-or</code> 全称 OCRREDUN：裁决盘的冗余选项，默认值为EXTERNAL。<font color='blue'>冗余选项EXTERNAL、NORMAL、HIGH对应磁盘最小数量为1、3、5。</font></p><blockquote><p>使用方式：<code>-or EXTERNAL</code></p></blockquote><p><code>-dr</code> 全称 OCRREDUN：裁决盘的冗余选项，默认值为EXTERNAL。<font color='blue'>冗余选项EXTERNAL、NORMAL、HIGH对应磁盘最小数量为1、2、3。</font></p><blockquote><p>使用方式：<code>-dr EXTERNAL</code></p></blockquote><p><code>-tsi</code> 全称 TIMESERVERIP：时间同步服务器IP，**<font color='blue'>可选参数</font>** ，根据实际情况进行填写。</p><blockquote><p>使用方式：<code>-tsi 10.211.55.200</code></p></blockquote><p><code>-txh</code> 全称 TuXingHua：图形化界面安装，默认值为N。选择Y后将安装图形化界面所需依赖。</p><blockquote><p>使用方式：<code>-txh Y</code></p></blockquote><p><code>-udev</code> 全称 UDEV：自动配置multipath+UDEV绑盘，默认值为Y。</p><blockquote><p>使用方式：<code>-udev Y</code></p></blockquote><p><strong><font color='blue'>以下参数为配置DNS解析：</font></strong></p><p><code>-dns</code> 全称 DNS：配置DNS解析，默认值为N。</p><blockquote><p>使用方式：<code>-dns N</code></p></blockquote><p><code>-dnss</code> 全称 DNSSERVER：当前主机配置为DNS服务器，默认值为N。前提是 <code>-dns Y</code> 才生效。</p><blockquote><p>使用方式：<code>-dnss N</code></p></blockquote><p><code>-dnsn</code> 全称 DNSNAME：DNS服务器的解析名称，前提是 <code>-dns Y</code> 才生效。</p><blockquote><p>使用方式：<code>-dnsn orcl.com</code></p></blockquote><p><code>-dnsi</code> 全称 DNSIP：DNS服务器的IP，前提是 <code>-dns Y</code> 才生效。</p><blockquote><p>使用方式：<code>-dnsi 10.211.55.200</code></p></blockquote><p><code>-m</code> 全称 ONLYCONFIGOS：仅配置操作系统参数，默认值为N。值为Y时，脚本只执行到操作系统配置完成就结束，不会进行安装，通常可用于图形化安装的初始化。</p><blockquote><p>使用方式：<code>-m Y</code></p></blockquote><p><code>-g</code> 全称 ONLYINSTALLGRID：仅安装Grid软件，默认值为N。</p><blockquote><p>使用方式：<code>-g Y</code></p></blockquote><p><code>-w</code> 全称 ONLYINSTALLORACLE：仅安装Oracle软件，默认值为N。</p><blockquote><p>使用方式：<code>-w Y</code></p></blockquote><p><code>-ocd</code> 全称 ONLYCREATEDB：仅创建Oracle数据库实例，默认值为N。</p><blockquote><p>使用方式：<code>-ocd Y</code></p></blockquote><p><code>-gpa</code> 全称 GRID RELEASE UPDATE：Grid软件的PSU或者RU补丁的补丁号。</p><blockquote><p>使用方式：<code>-gpa 32072711</code></p></blockquote><p><code>-opa</code> 全称 ORACLE RELEASE UPDATE：Oracle软件的PSU或者RU补丁的补丁号。</p><blockquote><p>使用方式：<code>-opa 32072711</code></p></blockquote><p><strong><font color='orage'>通过以上的参数介绍，相信大家对脚本的功能已经一览无余了，可以说是非常强大。是不是已经心动不如行动，想要尝试下进行安装了呢？下一章节即将介绍如何使用脚本。</font></strong></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Oracle </category>
+          
+          <category> 11GR2 </category>
+          
+          <category> 脚本 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Oracle </tag>
+            
+            <tag> 脚本 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>简单使用：Oracle数据库一键自动化部署SHELL脚本</title>
       <link href="/post/642e39e8.html"/>
       <url>/post/642e39e8.html</url>
@@ -257,9 +288,9 @@
           
           <category> Oracle </category>
           
-          <category> RMAN </category>
-          
           <category> DataGuard </category>
+          
+          <category> RMAN </category>
           
           <category> RAC </category>
           
@@ -294,9 +325,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> redhat7 </category>
           
@@ -383,9 +414,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> RAC </category>
           
@@ -420,9 +451,9 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Oracle </category>
+          
+          <category> Linux </category>
           
           <category> RAC </category>
           
