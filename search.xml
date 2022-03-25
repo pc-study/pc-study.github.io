@@ -264,9 +264,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> DataGuard </tag>
-            
             <tag> 19C </tag>
+            
+            <tag> DataGuard </tag>
             
         </tags>
       
@@ -328,9 +328,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> DataGuard </tag>
-            
             <tag> RAC </tag>
+            
+            <tag> DataGuard </tag>
             
             <tag> RMAN </tag>
             
@@ -369,9 +369,9 @@
             
             <tag> Oracle </tag>
             
-            <tag> RAC </tag>
-            
             <tag> 19C </tag>
+            
+            <tag> RAC </tag>
             
         </tags>
       
@@ -549,9 +549,9 @@
       
         <tags>
             
-            <tag> Hexo </tag>
-            
             <tag> Butterfly </tag>
+            
+            <tag> Hexo </tag>
             
         </tags>
       
