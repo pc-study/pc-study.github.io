@@ -313,11 +313,11 @@
           
           <category> Oracle </category>
           
-          <category> RAC </category>
-          
           <category> DataGuard </category>
           
           <category> RMAN </category>
+          
+          <category> RAC </category>
           
           <category> 11GR2 </category>
           
@@ -354,9 +354,9 @@
           
           <category> Linux </category>
           
-          <category> RAC </category>
-          
           <category> redhat7 </category>
+          
+          <category> RAC </category>
           
           <category> 19C </category>
           
