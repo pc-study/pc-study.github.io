@@ -1,0 +1,39 @@
+---
+title: Oracle 使用 PL/SQL Developer 生成 AWR 报告
+date: 2021-10-15 09:10:11
+tags: [每天一个dba小知识]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/135448
+---
+
+Oracle AWR报告是用来分析数据库故障和性能的重要指标报告！
+
+生成 awr 报告通常在数据库服务器端，oracle 用户下执行命令：
+```bash
+sqlplus / as sysdba @?/rdbms/admin/awrrpt.sql
+```
+执行完之后生成一个 html 报告，Linux 服务器无法直接查看，需要从服务器取出！
+
+**但是，事有例外，有些数据库服务器禁止取出文件！咋个办呢？**
+
+这个时候，我们可以通过 `pl/sql developer` 连接数据库，进行本地导出，或者配置 oracle 客户端进行本地导出！
+
+**⭐️ 以下演示如何使用 pl/sql developer 来导出 AWR 报告：**
+
+如果在 command 中执行，将报错如下：
+![](https://img-blog.csdnimg.cn/26c4a480acc84583afcec2cdfc2b9f8b.png)
+**<font color='orage'>那么，如何解决呢？</font>**
+
+需要找一个可以取出文件的数据库服务器，将 `$ORACLE_HOME/rdbms/admin` 目录下四个文件取出：
+![image.png](https://img-blog.csdnimg.cn/img_convert/b151e26fc1e927b9867594e098e3aa89.png)
+然后就可以执行了。
+![](https://img-blog.csdnimg.cn/img_convert/fedf791a505d1085c321bf9873b74459.png)
+
+---
+
+本次分享到此结束啦~
+
+如果觉得文章对你有帮助，<font color='red'>**点赞、收藏、关注、评论**</font>，一键四连支持，你的支持就是我创作最大的动力。
+
+❤️ 技术交流可以 关注公众号：**Lucifer三思而后行** ❤️

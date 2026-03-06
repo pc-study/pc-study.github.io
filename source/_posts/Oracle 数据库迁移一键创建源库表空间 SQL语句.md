@@ -1,0 +1,58 @@
+---
+title: Oracle 数据库迁移一键创建源库表空间 SQL语句
+date: 2021-10-05 20:11:45
+tags: [每天一个dba小知识]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/125852
+---
+
+**⭐️ 获取需要迁移的用户可以参考：[Oracle 数据泵迁移用户创建 SQL语句
+](https://luciferliu.blog.csdn.net/article/details/120236438)**
+
+**首先通过`用户`来获取迁移需要的表空间名称：**
+```sql
+SELECT distinct ''''|| t.tablespace_name||''',' From dba_segments t WHERE t.owner in ('需要迁移的用户名') and t.tablespace_name not in ('USERS','SYSTEM');
+```
+📢 注意：需要排除系统默认创建表空间！
+
+**通过 SQL 获取创建脚本：**
+```sql
+SELECT 'CREATE TABLESPACE ' ||D.TABLESPACE_NAME|| ' datafile ''/oradata/orcl/' ||LOWER(D.TABLESPACE_NAME)||'01.dbf'''|| ' size '|| 
+case when (D.total_gb - F.free_gb) > 30 then 30 else round(D.total_gb - F.free_gb + 2) end ||'G autoextend off  EXTENT MANAGEMENT LOCAL;' 
+  FROM (SELECT TABLESPACE_NAME,
+               ROUND(SUM(BYTES) / (1024 * 1024 * 1024), 2) free_gb
+          FROM SYS.DBA_FREE_SPACE
+         GROUP BY TABLESPACE_NAME) F,
+       (SELECT DD.TABLESPACE_NAME,
+               ROUND(SUM(DD.BYTES) / (1024 * 1024 * 1024), 2) total_gb
+          FROM SYS.DBA_DATA_FILES DD
+         GROUP BY DD.TABLESPACE_NAME) D
+ WHERE D.TABLESPACE_NAME = F.TABLESPACE_NAME(+)
+ AND D.TABLESPACE_NAME IN ('需要创建的表空间名称');
+```
+📢 注意：`/oradata/orcl/` 为目标端的数据文件目录路径！
+
+**创建 shell 脚本来后台创建表空间：**
+
+以下为 `ctbs.sh` 脚本内容：
+```bash
+sqlplus / as sysdba <<EOF
+spool ctbs.log
+## 这里填写上面👆🏻sql查询出来的语句！
+spool off
+EOF
+```
+编辑好脚本之后，执行后台创建：
+```bash
+chmod 775 ctbs.sh
+sh ctbs.sh &
+```
+
+---
+
+本次分享到此结束啦~
+
+如果觉得文章对你有帮助，<font color='red'>**点赞、收藏、关注、评论**</font>，一键四连支持，你的支持就是我创作最大的动力。
+
+❤️ 技术交流可以 关注公众号：**Lucifer三思而后行** ❤️

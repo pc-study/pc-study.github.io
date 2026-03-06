@@ -1,0 +1,77 @@
+---
+title: EMCC 13c 报错 "Metrics Global Cache Blocks Lost is at XXX" 解决
+date: 2025-06-04 11:45:42
+tags: [墨力计划]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/1930094319973707776
+---
+
+# 前言
+最近用 EMCC 13c 纳管了一套 Oracle RAC，纳管数据库后前端显示报错信息：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20250604-1930094741945856000_395407.png)
+
+本文分享一下解决方案，安装 EMCC 可参考：
+- [《Oracle Linux 9 安装 EMCC 13.5：避坑细节与实战经验汇总！》](https://www.modb.pro/db/1927601150161858560)
+- [《EMCC 13.5 完整安装详细版》](https://www.modb.pro/db/1760220352349294592)
+- [《实战篇：Oracle EMCC 24ai 保姆级安装教程！》](https://www.modb.pro/db/1869933671994638336)
+- [《EMCC 13.5 添加目标主机和数据库》](https://www.modb.pro/db/1762675003355631616)
+
+
+# 问题分析
+首先，检查被纳管主机是否配置 rac_global_cache_10i 收集任务：
+```bash
+## 在被纳管主机端执行
+## 检查是否配置 rac_global_cache_10i
+## 节点一
+[oracle@lucifer01:/u01/app/emagent/agent_13.5.0.0.0/bin]$ ./emctl status agent scheduler | grep rac_global_cache_10i
+
+2025-06-04 11:46:05.097 : oracle_database:lucifer01:rac_global_cache_10i
+
+## 节点二
+[oracle@lucifer02:/u01/app/emagent/agent_13.5.0.0.0/bin]$ ./emctl status agent scheduler | grep rac_global_cache_10i
+
+2025-06-04 11:47:32.035 : oracle_database:lucifer02:rac_global_cache_10i
+```
+如果没有输出，则不会遇到上述问题，一般存在收集任务，才会报错 `Metrics Global Cache Blocks Lost is at XXX`。
+
+## 解决方案
+以下操作均需在 OMS 服务端执行：
+```bash
+## 在 OMS 服务端执行
+[oracle@emcc:/home/oracle]$ source ~/.oms
+
+[oracle@emcc:/home/oracle]$ emcli login -username=sysman
+Enter password 
+
+Login successful
+
+[oracle@emcc:/home/oracle]$ emcli sync
+Synchronized successfully
+
+## 这里的 targetNames 要写被纳管的数据库实例名称
+[oracle@emcc:/home/oracle]$ emcli modify_collection_schedule -targetType="oracle_database" -targetNames="lucifer01" -collectionName="rac_global_cache_10i" -collectionStatus=Disabled -preview="N"
+Collection Name : rac_global_cache_10i
+lucifer01 : Collection Schedule updated successfully.
+The collection schedule of the following metrics might be affected :
+rac_global_cache
+
+[oracle@emcc:/home/oracle]$ emcli modify_collection_schedule -targetType="oracle_database" -targetNames="lucifer02" -collectionName="rac_global_cache_10i" -collectionStatus=Disabled -preview="N"
+Collection Name : rac_global_cache_10i
+lucifer02 : Collection Schedule updated successfully.
+The collection schedule of the following metrics might be affected :
+rac_global_cache
+```
+如果遇到报错：
+```bash
+[oracle@emcc:/home/oracle]$ emcli modify_collection_schedule -targetType="oracle_database" -targetNames="lucifer" -collectionName="rac_global_cache_10i" -collectionStatus=Disabled -preview="N"
+oracle_database : Collection Name not valid.
+```
+一般就是数据库实例名写错了，这个数据库实例要么没有配置 `rac_global_cache_10i`，要么是单实例数据库，需要通过在被纳管主机执行 `emctl status agent scheduler` 进行检查，确认正确的数据库实例，再进行修改。
+
+---
+
+参考 MOS：
+- [EM 13c: How to disable "Global Cache Blocks Lost Metric" Using EMCLI (Doc ID 2543134.1)](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2543134.1)
+- [Emcli Modify_collection_schedule Returns Error "Collection Name Not Valid" (Doc ID 3049878.1)](https://support.oracle.com/epmos/faces/DocContentDisplay?id=3049878.1)

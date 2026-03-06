@@ -1,0 +1,688 @@
+---
+title: 一文教你学会时序数据库 Apache IoTDB 安装部署，直接上手！！！
+date: 2024-05-28 15:21:01
+tags: [墨力计划]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/1794666320096727040
+---
+
+>大家好，这里是 **Lucifer三思而后行**，专注于提升数据库运维效率。
+
+@[TOC](目录)
+
+
+# 前言
+`Apache IoTDB` 一款**国产开源数据库**，是针对时间序列数据收集、存储与分析一体化的数据管理引擎。它具有体量轻、性能高、易使用的特点，完美对接 Hadoop 与 Spark 生态，适用于工业物联网应用中海量时间序列数据高速写入和复杂分析查询的需求。
+
+在安装部署方面，IoTDB 的理念就是系统运维要简单，要一键启动、开箱即用。所以 IoTDB 具有灵活的部署方式：
+- 云端一键部署
+- 终端解压即用
+- 终端-云端无缝连接（数据云端同步工具）
+
+参考文档：
+- [Apache IoTDB 官网 - 中文](https://iotdb.apache.org/zh/)
+- [IoTDB 用户手册(V1.3.x)](https://iotdb.apache.org/zh/UserGuide/latest/QuickStart/QuickStart.html)
+- [IoTDB 发行版本](https://iotdb.apache.org/zh/Download/)
+- [apache/iotdb 开源代码库](https://github.com/apache/iotdb/tree/master)
+
+本文主要讲解单机版的安装部署，关于集群安装部署由于篇幅问题，放到下一篇进行介绍。
+# 部署选型
+`Apache IoTDB` 提供了两种主要部署模式：
+- `单机部署`：适合轻量级系统，性能最高，一致性最高，由 `1C1D` 构成，开箱即用。
+- `集群部署`：适合对于扩展性和高可用有一定需求的系统，可以选择 `aCbD` 的部署方式。
+
+术语缩写：
+- `C`：ConfigNode
+- `D`：DataNode
+- `aCbD`：a 个 ConfigNode 和 b 个 DataNode
+
+在集群部署模式下，IoTDB 支持自动故障转移，确保系统在节点故障时能够快速切换到备用节点。切换时间可以达到秒级，从而最大限度地减少系统中断时间，且可保证切换后数据不丢失。当故障节点恢复正常，系统会自动将其重新纳入集群，确保集群的高可用性和可伸缩性。
+
+IoTDB 还支持读写分离模式部署，可以将读操作和写操作分别分配给不同的节点，从而实现负载均衡和提高系统的并发处理能力。
+
+**对于 IOTDB 的部署模式选型**，可以参考官方文档：[IoTDB 部署推荐](https://iotdb.apache.org/zh/UserGuide/latest/Deployment-and-Maintenance/Deployment-Recommendation.html)。
+
+## 选择模式
+IoTDB 包含以下 4 种部署模式，根据系统能力进行划分：
+
+| 模式               | 性能   | 扩展性 | 高可用 | 一致性 |
+|------------------|------|------|------|------|
+| 轻量单机模式       | 最高  | 无   | 无   | 高   |
+| 可扩展单节点模式 （默认） | 高   | 高   | 中   | 高   |
+| 高性能分布式模式    | 高   | 高   | 高   | 中   |
+| 强一致分布式模式    | 中   | 高   | 高   | 高   |
+
+系统能力：
+- `性能需求`：系统读写速度，压缩比
+- `扩展性`：系统能够用多节点管理数据，本质上是数据是否可分区管理
+- `高可用`：系统能够容忍节点失效，本质上是数据是否有副本
+- `一致性`：当数据有多副本时，不同副本是否一致，本质上用户是否能将数据库当做单机看待
+
+## 配置介绍
+在确定部署模式之后，参照下方的表格可以看到对于配置的一些需求和建议：
+
+| 配置                         | 轻量单机模式 | 可扩展单节点模式 | 高性能分布式模式 | 强一致分布式模式 |
+|-----------------------------|------------|-----------------|-------------------|-------------------|
+| ConfigNode 个数               | 1          | ≥1 （奇数）       | ≥1 （奇数）        | ≥1（奇数）        |
+| DataNode 个数                | 1          | ≥1              | ≥3                | ≥3                |
+| 元数据副本 schema_replication_factor | 1          | 1                | 3                  | 3                 |
+| 数据副本 data_replication_factor | 1          | 1                | 2                  | 3                 |
+| ConfigNode 协议 config_node_consensus_protocol_class | Simple    | Ratis             | Ratis              | Ratis             |
+| SchemaRegion 协议 schema_region_consensus_protocol_class | Simple    | Ratis             | Ratis              | Ratis             |
+| DataRegion 协议 data_region_consensus_protocol_class    | Simple    | IoT               | IoT                | Ratis             |
+
+通过以上一系列的选型之后，你的系统大概需要什么样的部署模式以及配置基本就可以确定了，接下来就是安装部署了。
+
+# 安装包下载
+`Apache IoTDB` 下载链接 🔗：[https://iotdb.apache.org/zh/Download/](https://iotdb.apache.org/zh/Download/) ：
+
+建议选择最新发行版，这里我下载 `All-in-one` 包，解压后即可使用，开箱即用！
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240526-4f3ec3ec-7a69-4984-ba02-a75bef3a97e8.png)
+
+如果需要历史版本的话可以选择历史版本下载。
+
+# 安装部署
+IoTDB 支持多种安装途径。用户可以使用以下三种方式对 IoTDB 进行安装：
+- 二进制可运行程序：从 **[下载](https://iotdb.apache.org/zh/Download/)** 页面下载最新的安装包，解压后即完成安装。
+- 使用源码：可以从代码仓库下载源码并编译，感兴趣的朋友也可以尝试源代码安装。
+- 使用 Docker 镜像：**dockerfile** 文件位于 **[Github](https://github.com/apache/iotdb/tree/master/docker)**。
+
+IoTDB 安装部署比较简单，需要满足以下要求：
+- 安装前需要保证设备上配有 `JDK>=1.8` 的运行环境，并配置好 `JAVA_HOME` 环境变量。
+- 设置最大文件打开数为 `65535`。
+
+**Java 下载地址：[所有操作系统的 Java 下载](https://www.java.com/zh-CN/download/manual.jsp)**
+
+笔者的电脑是 Mac，所以首先演示 MacOS 安装 IoTDB，会比较详细一些。
+## MacOS 安装
+### 检查 JAVA 环境
+首先需要检查 JAVA 环境是否满足条件（**MacOS 安装 Java 比较简单，双击安装即可**）：
+```bash
+## 查看安装好的 JAVA 版本
+╭─lucifer@Lucifer ~
+╰─$ java -version
+java version "1.8.0_411"
+Java(TM) SE Runtime Environment (build 1.8.0_411-b09)
+Java HotSpot(TM) 64-Bit Server VM (build 25.411-b09, mixed mode)
+
+## MacOS 查看默认安装 JAVA_HOME
+╭─lucifer@Lucifer ~
+╰─$ /usr/libexec/java_home
+/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home
+
+## 设置 JAVA_HOME
+╭─lucifer@Lucifer ~
+╰─$ cat<<-\EOF>>~/.zshrc                                
+export JAVA_HOME=$(/usr/libexec/java_home)
+EOF
+
+## 生效环境变量
+╭─lucifer@Lucifer ~
+╰─$ source ~/.zshrc
+
+## 查看 JAVA_HOME
+╭─lucifer@Lucifer-7 ~
+╰─$ echo $JAVA_HOME
+/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home
+```
+### 解压安装
+解压安装包：
+```bash
+╭─lucifer@Lucifer ~/Downloads
+╰─$ ll -lrth apache-iotdb-1.3.1-all-bin.zip
+-rwxr-xr-x@ 1 lucifer  staff    91M  5 26 17:54 apache-iotdb-1.3.1-all-bin.zip
+╭─lucifer@Lucifer ~/Downloads
+╰─$ unzip -q apache-iotdb-1.3.1-all-bin.zip -d /Volumes/DBA/IoTDB
+╭─lucifer@Lucifer ~/Downloads
+╰─$ cd /Volumes/DBA/IoTDB
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB
+╰─$ cd apache-iotdb-1.3.1-all-bin
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin
+╰─$ tree -d -L 1
+
+.
+├── conf
+├── lib
+├── licenses
+├── sbin
+└── tools
+
+6 directories
+```
+
+软件目录结构
+- sbin 启动和停止脚本目录
+- conf 配置文件目录
+- tools 系统工具目录
+- lib 依赖包目录
+
+### 启动 IoTDB 数据库
+IoTDB 是一个基于分布式系统的数据库。要启动 IoTDB ，可以先启动单机版（一个 ConfigNode 和一个 DataNode）来检查安装。
+
+用户可以使用 `sbin` 文件夹下的 `start-standalone` 脚本启动 IoTDB：
+```bash
+## 进入 sbin 目录
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin
+╰─$ cd sbin
+
+## 查看目录下有哪些内容
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ls
+daemon-confignode.sh   destroy-confignode.sh  remove-confignode.sh   start-cli.sh           start-standalone.bat   stop-datanode.bat
+daemon-datanode.sh     destroy-datanode.bat   remove-datanode.bat    start-confignode.bat   start-standalone.sh    stop-datanode.sh
+destroy-all.bat        destroy-datanode.sh    remove-datanode.sh     start-confignode.sh    stop-all.sh            stop-standalone.bat
+destroy-all.sh         iotdb-common.sh        start-all.sh           start-datanode.bat     stop-confignode.bat    stop-standalone.sh
+destroy-confignode.bat remove-confignode.bat  start-cli.bat          start-datanode.sh      stop-confignode.sh
+
+## start-standalone 命令可以同时启动 ConfigNode 和 DataNode，就是这么简单快捷
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ./start-standalone.sh
+Execute start-standalone.sh finished, you can see more details in the logs of confignode and datanode
+```
+### 连接 IoTDB 数据库
+启动后使用 start-cli.sh 来连接 IoTDB，这是一个客户端连接程序：
+```bash
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ./start-cli.sh --help                                                                                                                                                    130 ↵
+Usage: ./start-cli.sh [-h <ip>] [-p <port>] [-u <username>] [-pw <password>] [-D <name=value>] [-c] [-e sql]
+```
+1、直接执行 start-cli.sh 连接本机数据库：
+```bash
+## 默认连接本机 127.0.0.1，默认端口号是 6667，数据库开启时默认会创建一个 root 用户，对应密码为 root
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ./start-cli.sh                                                                                                                                                             1 ↵
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______
+|_   _|     |  _   _  ||_   _ `.|_   _ \
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |
+  | | / .'`\ \  | |      | |  | | |  __'.
+ _| |_| \__. | _| |_    _| |_.' /_| |__) |
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.1 (Build: 214695d)
+
+
+Successfully login at 127.0.0.1:6667
+## 这里因为是新建的数据库，所以没有数据，是正常的
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.224s
+```
+2、指定详细信息的方式连接：
+```bash
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ./start-cli.sh -h 127.0.0.1 -p 6667 -u root -pw root
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______
+|_   _|     |  _   _  ||_   _ `.|_   _ \
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |
+  | | / .'`\ \  | |      | |  | | |  __'.
+ _| |_| \__. | _| |_    _| |_.' /_| |__) |
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.1 (Build: 214695d)
+
+
+Successfully login at 127.0.0.1:6667
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.030s
+```
+3、指定数据库主机 IP 连接，通常适用于客户端和数据库端不在一个主机上时连接：		
+```bash
+╭─lucifer@Lucifer /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ./start-cli.sh -h 192.168.31.24 -p 6667 -u root -pw root
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______
+|_   _|     |  _   _  ||_   _ `.|_   _ \
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |
+  | | / .'`\ \  | |      | |  | | |  __'.
+ _| |_| \__. | _| |_    _| |_.' /_| |__) |
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.1 (Build: 214695d)
+
+
+Successfully login at 192.168.31.24:6667
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.030s
+```
+
+### 关闭 IoTDB 数据库
+```bash
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin/sbin
+╰─$ ./stop-standalone.sh
+Check whether the internal_port is used..., port is 10710
+Stop ConfigNode, PID: 82045
+Check whether the rpc_port is used..., port is 6667
+Stop DataNode, PID: 82096
+```
+
+### 配置快捷命令
+这里分享一个小技巧，避免每次使用都需要进入到 sbin 目录下执行命令：
+```bash
+╭─lucifer@Lucifer-7 ~
+╰─$ cat<<-\EOF>>~/.zshrc
+export IoTDB_HOME=/Volumes/DBA/IoTDB/apache-iotdb-1.3.1-all-bin
+alias IoTDB_start='$IoTDB_HOME/sbin/start-standalone.sh'
+alias IoTDB_stop='$IoTDB_HOME/sbin/stop-standalone.sh'
+alias IoTDB_cli='$IoTDB_HOME/sbin/start-cli.sh'
+EOF
+╭─lucifer@Lucifer-7 ~
+╰─$ source ~/.zshrc
+```
+使用快捷命令：
+```bash
+╭─lucifer@Lucifer-7 ~
+╰─$ IoTDB_start
+Execute start-standalone.sh finished, you can see more details in the logs of confignode and datanode
+╭─lucifer@Lucifer-7 ~
+╰─$ IoTDB_cli
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______
+|_   _|     |  _   _  ||_   _ `.|_   _ \
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |
+  | | / .'`\ \  | |      | |  | | |  __'.
+ _| |_| \__. | _| |_    _| |_.' /_| |__) |
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.1 (Build: 214695d)
+
+
+Successfully login at 127.0.0.1:6667
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.181s
+IoTDB> exit
+╭─lucifer@Lucifer-7 ~
+╰─$ IoTDB_stop
+Check whether the internal_port is used..., port is 10710
+Stop ConfigNode, PID: 90400
+Check whether the rpc_port is used..., port is 6667
+Stop DataNode, PID: 90449
+```
+单机模式比较简单，到这里安装就结束了。
+
+## Windows 安装
+Windows 也是一样，安装配置好 JAVA 后解压文件夹即可。
+
+### 检查 JAVA 环境
+查看 JAVA 是否满足：
+```bash
+## 查看 java 版本
+C:\Users\RemoteVM>java -version
+java version "1.8.0_411"
+Java(TM) SE Runtime Environment (build 1.8.0_411-b09)
+Java HotSpot(TM) 64-Bit Server VM (build 25.411-b09, mixed mode)
+
+## 查看 JAVA_HOME 环境变量
+C:\Users\RemoteVM>echo %JAVA_HOME%
+C:\Program Files\Java\jre-1.8
+```
+
+### 解压安装
+解压安装：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-4d515938-cb7c-4657-aa53-689591da7ddf.png)
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-c1fc10b9-a342-4ab1-a442-4e3a1530b241.png)
+
+### 启动 IoTDB 数据库
+进入 sbin 目录双击 `start-standalone.bat` 打开 IoTDB 数据库：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-fd81827f-4af2-4a62-a47a-e8e8cc34e365.png)
+
+会打开两个窗口，当提示 `Congratulation, IoTDB DataNode is set up successfully. Now, enjoy yourself!` 即打开 IoTDB 成功：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-85bc69a7-dfc8-43e5-9535-ecac86b68dc0.png)
+
+### 连接 IoTDB 数据库
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-b2da5daf-bacc-451d-8f3b-65edcbbb2a41.png)
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-ebcce9b9-7776-4300-bce3-fef70478abc7.png)
+
+### 关闭 IoTDB 数据库
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-3fad1850-6ea0-4c8b-8c6f-a71677770908.png)
+
+执行关闭后，两个窗口提示按任意键退出，回车退出即可：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-63483185-58a8-4797-94a2-bdc78d0b7b1a.png)
+
+### 配置快捷命令
+Windows 没有 alias 命令，所以使用环境变量的方式来简化：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20240527-241158f6-c091-4788-859b-be7c433924fd.png)
+
+```bash
+## 进入 IoTDB sbin 目录
+C:\Users\RemoteVM>cd %IoTDB_HOME%\sbin
+
+## 开启 IoTDB
+C:\IoTDB\apache-iotdb-1.3.1-all-bin\sbin>start-standalone.bat
+
+## 连接 IoTDB
+C:\IoTDB\apache-iotdb-1.3.1-all-bin\sbin>start-cli.bat
+
+## 关闭 IoTDB
+C:\IoTDB\apache-iotdb-1.3.1-all-bin\sbin>stop-standalone.bat
+```
+Windows 的安装部署使用介绍到这结束，接下来讲讲 Linux 的安装部署。
+
+## Linux 安装
+安装好 Linux 操作系统后，创建 /soft 目录，上传所需安装介质：
+```bash
+[root@IoTDB01 ~]# mkdir /soft
+[root@IoTDB01 ~]# cd /soft/
+[root@IoTDB01 soft]# ll
+-rwxr-xr-x. 1 root root  95421406 May 27 11:52 apache-iotdb-1.3.1-all-bin.zip
+-rwxr-xr-x. 1 root root 107935904 May 27 11:53 jre-8u411-linux-x64.rpm
+```
+### 检查 JAVA 环境
+安装 java：
+```bash
+[root@IoTDB01 soft]# rpm -ivh jre-8u411-linux-x64.rpm 
+warning: jre-8u411-linux-x64.rpm: Header V3 RSA/SHA256 Signature, key ID ad986da3: NOKEY
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:jre-1.8-1.8.0_411-9              ################################# [100%]
+```
+检查 java 版本：
+```bash
+[root@IoTDB01 soft]# java -version
+java version "1.8.0_411"
+Java(TM) SE Runtime Environment (build 1.8.0_411-b09)
+Java HotSpot(TM) 64-Bit Server VM (build 25.411-b09, mixed mode)
+```
+查看 java 安装位置：
+```bash
+[root@IoTDB01 ~]# which java
+/usr/bin/java
+[root@IoTDB01 ~]# ll /usr/bin/java
+lrwxrwxrwx. 1 root root 22 May 27 12:22 /usr/bin/java -> /etc/alternatives/java
+[root@IoTDB01 ~]# ll /etc/alternatives/java
+lrwxrwxrwx. 1 root root 40 May 27 12:22 /etc/alternatives/java -> /usr/lib/jvm/jre-1.8-oracle-x64/bin/java
+```
+配置环境变量：
+```bash
+[root@IoTDB01 ~]# cat<<-\EOF>>~/.bash_profile                         
+export JAVA_HOME=/usr/lib/jvm/jre-1.8-oracle-x64
+EOF
+## 生效环境变量
+[root@IoTDB01 ~]# source ~/.bash_profile 
+## 查看环境变量
+[root@IoTDB01 ~]# echo $JAVA_HOME
+/usr/lib/jvm/jre-1.8-oracle-x64
+```
+
+### 解压安装
+这里我考虑的是可以创建一个 IoTDB 专用的用户来安装，与 root 用户保持安全隔离，但是官方文档没有提及，那就暂且不表。 
+```bash
+## 创建 IoTDB 安装目录
+[root@IoTDB01 ~]# mkdir /IoTDB
+[root@IoTDB01 ~]# unzip -q /soft/apache-iotdb-1.3.1-all-bin.zip -d /IoTDB/
+[root@IoTDB01 ~]# cd /IoTDB/apache-iotdb-1.3.1-all-bin/
+[root@IoTDB01 apache-iotdb-1.3.1-all-bin]# ll
+total 156
+drwxr-xr-x. 2 root root  4096 Nov  8  2023 conf
+drwxr-xr-x. 2 root root  8192 Nov  8  2023 lib
+-rw-r--r--. 1 root root 14739 Nov  8  2023 LICENSE
+drwxr-xr-x. 2 root root   259 Nov  8  2023 licenses
+-rw-r--r--. 1 root root   786 Nov  8  2023 NOTICE
+-rw-r--r--. 1 root root 19971 Nov  8  2023 README.md
+-rw-r--r--. 1 root root 16730 Nov  8  2023 README_ZH.md
+-rw-r--r--. 1 root root 77727 Nov  8  2023 RELEASE_NOTES.md
+drwxr-xr-x. 2 root root  4096 Nov  8  2023 sbin
+drwxr-xr-x. 4 root root   261 Nov  8  2023 tools
+```
+### 启动 IoTDB 数据库
+进入 sbin 目录：
+```bash
+## 一键启动 IoTDB 数据库
+[root@IoTDB01 sbin]# ./start-standalone.sh 
+Execute start-standalone.sh finished, you can see more details in the logs of confignode and datanode
+```
+### 连接 IoTDB 数据库
+```bash
+[root@IoTDB01 sbin]# ./start-cli.sh 
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______    
+|_   _|     |  _   _  ||_   _ `.|_   _ \   
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |  
+  | | / .'`\ \  | |      | |  | | |  __'.  
+ _| |_| \__. | _| |_    _| |_.' /_| |__) | 
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.1 (Build: 214695d)
+                                           
+
+Successfully login at 127.0.0.1:6667
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.445s
+```
+### 关闭 IoTDB 数据库
+```bash
+[root@IoTDB01 sbin]# ./stop-standalone.sh 
+Check whether the internal_port is used..., port is 10710
+Stop ConfigNode, PID: 19825
+Check whether the rpc_port is used..., port is 6667
+Stop DataNode, PID: 19916
+```
+### 配置快捷命令
+```bash
+[root@IoTDB01 ~]# cat <<-\EOF>> ~/.bash_profile
+export IoTDB_HOME=/IoTDB/apache-iotdb-1.3.1-all-bin
+alias IoTDB_start='$IoTDB_HOME/sbin/start-standalone.sh'
+alias IoTDB_stop='$IoTDB_HOME/sbin/stop-standalone.sh'
+alias IoTDB_cli='$IoTDB_HOME/sbin/start-cli.sh'
+EOF
+[root@IoTDB01 ~]# source ~/.bash_profile
+```
+使用快捷命令：
+```bash
+[root@IoTDB01 ~]# IoTDB_start 
+Execute start-standalone.sh finished, you can see more details in the logs of confignode and datanode
+[root@IoTDB01 ~]# IoTDB_cli 
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______    
+|_   _|     |  _   _  ||_   _ `.|_   _ \   
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |  
+  | | / .'`\ \  | |      | |  | | |  __'.  
+ _| |_| \__. | _| |_    _| |_.' /_| |__) | 
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.1 (Build: 214695d)
+                                           
+
+Successfully login at 127.0.0.1:6667
+IoTDB> exit
+[root@IoTDB01 ~]# IoTDB_stop 
+Check whether the internal_port is used..., port is 10710
+Stop ConfigNode, PID: 20453
+Check whether the rpc_port is used..., port is 6667
+Stop DataNode, PID: 20586
+```
+Linux 的安装部署方式和 MacOS 有异曲同工之妙。
+
+## Docker 安装
+Apache IoTDB 的 Docker 镜像已经上传至 **[apache/iotdb](https://hub.docker.com/r/apache/iotdb)**，配置项以环境变量形式添加到容器内。
+
+### 获取镜像
+```bash
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker pull apache/iotdb:1.3.0-standalone                                                                                          1 ↵
+1.3.0-standalone: Pulling from apache/iotdb
+a5319f8e5f3f: Pull complete
+7b69f35fd155: Pull complete
+8a34aa4bb6bc: Pull complete
+0831ffaa0d23: Pull complete
+b0b2a79b9345: Pull complete
+cc18aa9bc494: Pull complete
+950303a2b413: Pull complete
+d107e2d47e2e: Pull complete
+4f4fb700ef54: Pull complete
+d9ef7c0512c1: Pull complete
+179442d66d38: Pull complete
+78cb2491d03b: Pull complete
+Digest: sha256:14749f800fca09c0290f61593ffeec727d54589055cbcf2005365a500aeb8051
+Status: Downloaded newer image for apache/iotdb:1.3.0-standalone
+docker.io/apache/iotdb:1.3.0-standalone
+```
+### 创建 docker bridge 网络
+下方的网络信息根据自己的网络环境进行配置：
+```bash
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker network create --driver=bridge --subnet=192.168.6.0/24 --gateway=192.168.6.254 iotdb
+f0db8a34f40bb9624e3c01fc8afe8cb518dead6e8d487f87c6069b17f3639780
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker network ls
+NETWORK ID     NAME      DRIVER    SCOPE
+c81faf20cc81   bridge    bridge    local
+49668e89d819   host      host      local
+f0db8a34f40b   iotdb     bridge    local
+582cc8e5f713   none      null      local
+```
+### 创建 docker 容器
+```bash
+## 注意：必须固定IP部署。IP改变会导致 confignode 启动失败
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker run -d --name iotdb-service \
+              --hostname iotdb-service \
+              --network iotdb \
+              --ip 192.168.6.164 \
+              -p 6667:6667 \
+              -e cn_internal_address=iotdb-service \
+              -e cn_seed_config_node=iotdb-service:10710 \
+              -e cn_internal_port=10710 \
+              -e cn_consensus_port=10720 \
+              -e dn_rpc_address=iotdb-service \
+              -e dn_internal_address=iotdb-service \
+              -e dn_seed_config_node=iotdb-service:10710 \
+              -e dn_mpp_data_exchange_port=10740 \
+              -e dn_schema_region_consensus_port=10750 \
+              -e dn_data_region_consensus_port=10760 \
+              -e dn_rpc_port=6667 \
+              apache/iotdb:1.3.0-standalone
+7c5fed890ee1376e1fc701268ffe198844fa7555e62974361c8ca429773e928b
+```
+### 关闭 IoTDB 数据库
+```bash
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker exec -ti iotdb-service /iotdb/sbin/stop-standalone.sh
+Check whether the internal_port is used..., port is 10710
+Stop ConfigNode, PID: 292
+Check whether the rpc_port is used..., port is 6667
+Stop DataNode, PID: 7
+```           
+### 启动 IoTDB 数据库
+```bash
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker ps -a                                                                                                                     130 ↵
+CONTAINER ID   IMAGE                           COMMAND                   CREATED          STATUS                       PORTS     NAMES
+7c5fed890ee1   apache/iotdb:1.3.0-standalone   "/usr/bin/dumb-init …"   11 minutes ago   Exited (130) 3 minutes ago             iotdb-service
+
+## 打开容器
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker start -i iotdb-service
+
+......
+
+2024-05-27 05:22:17,950 [main] INFO  o.a.i.db.service.DataNode:204 - Congratulation, IoTDB DataNode is set up successfully. Now, enjoy yourself!
+```
+### 连接 IoTDB 数据库
+```bash
+╭─lucifer@Lucifer-7 /Volumes/DBA/IoTDB
+╰─$ docker exec -ti iotdb-service /iotdb/sbin/start-cli.sh -h iotdb-service
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______
+|_   _|     |  _   _  ||_   _ `.|_   _ \
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |
+  | | / .'`\ \  | |      | |  | | |  __'.
+ _| |_| \__. | _| |_    _| |_.' /_| |__) |
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.0 (Build: d1326c5)
+
+
+Successfully login at iotdb-service:6667
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.181s
+```
+也可以使用外部客户端连接：
+```bash
+## <主机IP/hostname> 是物理机的真实IP或域名。如果在同一台物理机，可以是127.0.0.1。
+╭─lucifer@Lucifer-7 ~
+╰─$ IoTDB_cli -h 127.0.0.1 -p 6667
+---------------------
+Starting IoTDB Cli
+---------------------
+ _____       _________  ______   ______
+|_   _|     |  _   _  ||_   _ `.|_   _ \
+  | |   .--.|_/ | | \_|  | | `. \ | |_) |
+  | | / .'`\ \  | |      | |  | | |  __'.
+ _| |_| \__. | _| |_    _| |_.' /_| |__) |
+|_____|'.__.' |_____|  |______.'|_______/  version 1.3.0 (Build: d1326c5)
+
+
+Successfully login at 127.0.0.1:6667
+IoTDB> show timeseries
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+|Timeseries|Alias|Database|DataType|Encoding|Compression|Tags|Attributes|Deadband|DeadbandParameters|ViewType|
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
++----------+-----+--------+--------+--------+-----------+----+----------+--------+------------------+--------+
+Empty set.
+It costs 0.218s
+```
+关于单机版安装部署的使用介绍到此结束。
+
+---
+
+# 往期精彩文章
+>[Oracle 一键巡检自动生成 Word 报告](https://mp.weixin.qq.com/s/0xFe5m1DQ0ucT2_266hsrA)    
+[Oracle 一键安装合集](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5MzcwNzQ0MQ==&action=getalbum&album_id=3497774649285296131#wechat_redirect)    
+[Oracle一键安装脚本的 21 个疑问与解答](https://mp.weixin.qq.com/s/gv6t97FFyMsd6e4GH1HAwQ)    
+[Oracle一键巡检脚本的 21 个疑问与解答](https://mp.weixin.qq.com/s/4zI73auIUhwSRb7qL3UIfw)    
+[全网首发：Oracle 23ai 一键安装脚本（非 RPM）](https://mp.weixin.qq.com/s/UL0BSMCAZrOQgCoWpDMGew)    
+[Oracle 19C 最新 RU 补丁 19.24 ，一键安装！](https://mp.weixin.qq.com/s/T7GbpwhnMugzk7PB6hAoJQ)    
+[Oracle Linux 7.9 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/dT4tFMYVZ3mh49CI6V3YEA)    
+[RedHat 9.4(aarch64) 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/cQJ6gP1bM_7m0H5-Dha4TA)    
+[openEuler 22.03 LTS SP4 一键安装 Oracle 19C RAC](https://mp.weixin.qq.com/s/sx1E4GIvIeQXp2vGMmVr2A)    
+[RHEL 7.9 一键安装 Oracle 19C 19.23 RAC](https://mp.weixin.qq.com/s/mUHqU5hQ9GdH2bKuClPt5A)    
+[Oracle DataGuard GAP 修复手册](https://mp.weixin.qq.com/s/Trt7gYkQVoL5A803WlDL6Q)    
+[优化 Oracle：最佳实践与开发规范](https://mp.weixin.qq.com/s/DysIcb-p11j56d3YtlqpcQ)    
+[DBA 必备：Linux 软件源配置全攻略](https://mp.weixin.qq.com/s/SmncWuYAubj0tnOw35aJGA)    
+[Linux 一键配置时钟同步全攻略](https://mp.weixin.qq.com/s/yvth1vorP3JjUp3g3vPBAQ)    
+
+---
+
+感谢您的阅读，这里是 **Lucifer三思而后行**，欢迎**点赞+关注**，我会持续分享数据库知识、运维技巧。

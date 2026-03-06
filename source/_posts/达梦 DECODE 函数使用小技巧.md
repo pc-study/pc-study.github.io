@@ -1,0 +1,157 @@
+---
+title: 达梦 DECODE 函数使用小技巧
+date: 2024-11-21 10:16:11
+tags: [墨力计划,达梦,达梦数据库,达梦8]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/1859412457341595648
+---
+
+>大家好，这里是公众号 **DBA学习之路**，分享一些学习国产数据库路上的知识和经验。
+
+# 社群交流
+为了给大家提供一些技术交流的平台，目前已成立的技术交流群：
+- Oracle 数据库交流群
+- 国产数据库交流群
+- Linux 技术交流群
+- ChatGPT 4o 免费体验群
+
+需要进群（**均已超过 200 人，需要邀请**）可以添加号主微信：Lucifer-0622，备注对应的群名即可。
+
+@[TOC](目录)
+
+# 前言
+今天群友问了一个问题：**达梦 decode 不能把字符串转数字么？**
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859412758001889280_395407.png)
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859412822799691776_395407.png)
+
+出于好奇，我打算测试一下，最终得到了解决方案，本文记录分享一下解决过程。
+
+# 函数 DECODE
+首先科普下函数 **DECODE()**：
+```sql
+语法：DECODE(exp, search1, result1, … searchn, resultn[,default])
+```
+功能：查表译码，DECODE 函数将 `exp` 与 `search1,search2, … searchn` 相比较，如果等于 `searchx`，则返回 `resultx`，如果没有找到匹配项，则返回 `default`, 如果未定义 `default`，返回 `NULL`。
+
+例如：
+```sql
+SQL> SELECT DECODE(1, 1, 'A', 2, 'B');
+
+DECODE(1,1,'A',2,'B')
+---------------------
+A
+
+10:10:16 dmdba@DAMENG:5236 SQL> SELECT DECODE(3, 1, 'A', 2, 'B');
+
+DECODE(3,1,'A',2,'B')
+---------------------
+NULL
+
+10:10:21 dmdba@DAMENG:5236 SQL> SELECT DECODE(3, 1, 'A', 2, 'B', 'C');
+
+DECODE(3,1,'A',2,'B','C')
+-------------------------
+C
+```
+通过以上例子可以简单了解 DECODE 函数的用法。
+
+# 问题复现
+我赶紧连上达梦数据库，测试了一下，果然不支持：
+```sql
+SQL> select decode(nvl(null,3),'其他',2,3,3,1) from dual;
+select decode(nvl(null,3),'其他',2,3,3,1) from dual;
+[-6111]:字符串转换出错.
+```
+
+![image.png](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859413018900180992_395407.png)
+
+但是在 Oracle 数据库是可以执行成功的：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859414090276417536_395407.png)
+
+**这是为什么呢？**
+
+我第一反应可能是 **达梦 decode 函数不支持隐式转换**，所以改写了一下 SQL：
+```sql
+-- 将需要比较的字符都改成同一个类型
+SQL> select decode(nvl(null,'3'),'其他',2,'3',3,1) from dual;
+
+DECODE(NVL(NULL,'3'),'其他',2,'3',3,1)
+----------------------------------------
+3
+```
+果然执行不报错了，不过我还想着深究一下，觉得达梦不至于这个没考虑到。
+
+# 解决方案
+通过查询达梦官方文档，发现有一个参数可以解决这个问题：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859415241793220608_395407.png)
+
+搜索错误码 `[-6111]:字符串转换出错` 也可以搜索到相关内容：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859415613907677184_395407.png)
+
+根据上述解决方案，测试是否可以生效。
+
+# 实战
+查看当前数据库的参数值：
+```sql
+SQL> select * from v$dm_ini where para_name = 'CASE_COMPATIBLE_MODE';
+
+PARA_NAME            PARA_VALUE MIN_VALUE MAX_VALUE DEFAULT_VALUE MPP_CHK SESS_VALUE FILE_VALUE DESCRIPTION                                                                                              PARA_TYPE SYNC_FLAG SYNC_LEVEL
+-------------------- ---------- --------- --------- ------------- ------- ---------- ---------- -------------------------------------------------------------------------------------------------------- --------- --------- ----------
+CASE_COMPATIBLE_MODE 1          0         7         1             N       1          1          Case compatible mode, 0:none, 1:Oracle(simple case), 2:Oracle(simple case new rule), 4:Oracle(bool case) SYS       ALL_SYNC  CAN_SYNC
+```
+当前参数值为 1，我们需要修改参数值为 2：
+```sql
+SQL> SP_SET_PARA_VALUE(1,'CASE_COMPATIBLE_MODE',2);
+DMSQL 过程已成功完成
+```
+系统级参数需要重启数据库生效：
+```bash
+[dmdba@dm8:/home/dmdba]$ DmServiceDAMENG restart
+Stopping DmServiceDAMENG:                                  [ OK ]
+Starting DmServiceDAMENG:                                  [ OK ]
+```
+再次尝试使用函数 DECODE() 查询即可成功：
+```sql
+SQL> select decode(nvl(null,3),'其他',2,3,3,1) from dual;
+
+DECODE(NVL(NULL,3),'其他',2,3,3,1)
+------------------------------------
+3
+```
+已经可以正常执行。
+
+
+# 写在最后
+看来这也算是 Oracle 迁移到 DM 的一个小坑吧，问题比较简单，记录一下。
+
+如果有遗漏或者不足的地方，欢迎评论区补充或者投稿，感谢阅读！
+
+# 往期精彩文章
+>[达梦数据库安装最详细教程](https://mp.weixin.qq.com/s/gjQBBvjIFsHC1rtEjn30nw)      
+[一招教你学会达梦数据库的免密登录](https://mp.weixin.qq.com/s/hapMuAF9xg8fbdlKJpsN6A)    
+[一文讲透达梦数据库的大小写敏感](https://mp.weixin.qq.com/s/pZIcZiICY1pUiTAWQRtUKg)    
+[效率翻倍！达梦数据库 disql 使用技巧全攻略](https://mp.weixin.qq.com/s/MWQeqdvIfo9D2d8_vi7BTg)    
+[达梦数据库参数配置与一键优化指南](https://mp.weixin.qq.com/s/5EvUN21PZ3Oc0tDnygr7rw)    
+[达梦 AWR 报告快速上手指南](https://mp.weixin.qq.com/s/4vl88Oj9Nal-goeoijAqWg)     
+[金仓数据库 KingbaseES V9 单机安装指南](https://mp.weixin.qq.com/s/Yd3gkFki_OJsCfCFKf1Ttw)      
+[KingbaseES KSQL 免密登录的几种方式](https://mp.weixin.qq.com/s/u7HK4soHUght3p0tzHPanA)       
+[KingbaseES 控制文件冗余与恢复秘籍](https://mp.weixin.qq.com/s/vdsFR2aPNp8Gys1G4qX5cQ)    
+[金仓 KingbaseES RAC 入门指南](https://mp.weixin.qq.com/s/xzPsgHFUxqfAOMi1NPZvjA)         
+[GBase 8a MPP 集群部署最佳实践](https://mp.weixin.qq.com/s/zt6Jhv0liO5EsvWyc6YrOg)     
+[GBase 8a GDCA 认证课后练习题大全（题库）](https://mp.weixin.qq.com/s/XVG7hODwoZnChzj_FT3c8g)
+[南大通用 GBASE 8s V8.8 数据库最全安装指南](https://mp.weixin.qq.com/s/MwmvwR7sUQ6VuoftHM19mA)
+[GBase 8s GDCA 认证课后练习题大全（题库）](https://mp.weixin.qq.com/s/XL2jYOPEf9x_bXW0VFE6kg)      
+[GBase 8s 数据库巡检报告及一键巡检脚本](https://mp.weixin.qq.com/s/oIEWt5pzK0KfhUq3GUNGCA)      
+[YashanDB 一键生成 AWR 报告](https://mp.weixin.qq.com/s/i-L_tAF-XIIY_d4YCn0MIw)       
+[YashanDB 数据库安装部署](https://mp.weixin.qq.com/s/sgB3WQ6A8mGl3QaIJj5v1A)  
+[YashanDB 共享集群（YAC）入门指南与技术详解](https://mp.weixin.qq.com/s/8ioXIpc9J6_XYJWt7L-RoA)   
+
+---
+
+<center>「喜欢这篇文章，您的关注和赞赏是给作者最好的鼓励」</center>

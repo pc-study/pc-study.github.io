@@ -1,0 +1,369 @@
+---
+title: 红帽 RHEL 10.0 Beta 闪亮登场！（附安装教程）
+date: 2024-11-21 14:17:17
+tags: [墨力计划,rhel10,红帽]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/1859478320216289280
+---
+
+>大家好，这里是 **Lucifer三思而后行**，专注于提升数据库运维效率。
+
+@[TOC](目录)
+
+# 社群交流
+为了给大家提供一些技术交流的平台，目前已成立的技术交流群：
+- Oracle 数据库交流群
+- 国产数据库交流群
+- Linux 技术交流群
+- ChatGPT 4o 免费体验群
+
+需要进群（**均已超过 200 人，需要邀请**）可以添加号主微信：Lucifer-0622，备注对应的群名即可。
+
+# 前言
+今天帮朋友下载红帽 RHEL 安装镜像，发现 Red Hat Enterprise Linux 10 beta 居然发布了，本文就大概介绍一些我比较关注的更新内容。
+
+![](https://files.mdnice.com/user/16270/0c7b851f-3472-4389-a02e-ecdfad770261.png)
+
+# RHEL10 Beta 更新概述
+Red Hat Enterprise Linux 10.0 Beta 附带**内核版本 6.11.0**，该版本为以下架构提供最低要求版本支持（括号中注明）：
+- AMD 和 Intel 64 位架构（x86-64-v3）
+- 64 位 ARM 架构（ARMv8.0-A）
+- IBM Power Systems，小端（POWER9）
+- 64 位 IBM Z (z14)
+
+**RHEL 安装程序的主要亮点**：
+- 新创建的用户将默认拥有管理权限，除非您取消选择该选项。
+- 您现在可以使用新选项而不是时区图来设置所需的时区。
+- 用于图形远程访问的远程桌面协议 (RDP) 取代了 VNC。
+
+**RHEL 映像生成器的主要亮点**：
+- 磁盘映像（例如 AWS 或 KVM）没有单独的/boot分区。
+
+RHEL 10 包含版本 9.8 的OpenSSH套件，它对 RHEL 9 中提供的 OpenSSH 8.7 进行了大量的修复和改进。
+
+**RHEL 10.0 提供了以下动态编程语言**：
+- Python 3.12
+- Ruby 3.3
+- Node.js 22
+- Perl 5.40
+- PHP 8.3
+
+**RHEL 10.0 提供以下数据库服务器**：
+- MariaDB 10.11
+- MySQL 8.4
+- PostgreSQL 16
+
+**RHEL 10.0 Beta 提供以下系统工具链组件**：
+- GCC 14.2
+- glibc 2.39
+- binutils 2.41
+
+# RHEL10 Beta 安装
+我这里使用的是 **VMware® Workstation 17 Pro（17.5.2 build-23775571）** 虚拟机进行安装，安装镜像记得一定要选择 DVD，不要使用 BOOT，有坑会无法安装。
+
+## 初始界面
+配置完虚拟机之后，开机进入安装初始界面：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859486598128218112_395407.png)
+
+老样子，选择语言（默认英文）：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859485849126187008_395407.png)
+
+由于是测试版，有一个确认提示：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859487392558755840_395407.png)
+
+进入熟悉的安装界面：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859505744496832512_395407.png)
+
+## 磁盘分区
+配置磁盘分区：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859505985363128320_395407.png)
+
+选择自定义：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859506103793496064_395407.png)
+
+自动创建分区：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859506202351251456_395407.png)
+
+可根据需要自行配置分区，我这里默认不做修改：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859506454038851584_395407.png)
+
+完成磁盘分区：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859506562579050496_395407.png)
+
+## 配置主机名和网络
+选择主机名和网络配置进入配置详情页：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859506688483667968_395407.png)
+
+填写主机名并生效，启用网卡并配置网络：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859506883288117248_395407.png)
+
+配置网络信息：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859507220162031616_395407.png)
+
+配置完成：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859507437225652224_395407.png)
+
+## 配置时区
+相对于之前的版本，配置时区这里不再是一个世界地图，而是改成了纯选项框：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859507523007557632_395407.png)
+
+这里还增加了一个 NTP 配置选项，前提是需要先配置好网络：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859507942366654464_395407.png)
+
+## 配置 root 密码
+默认不启用 root 账户：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859508074097160192_395407.png)
+
+选择启用 root 用户并设置可以使用密码连接：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859508249897218048_395407.png)
+
+弱密码依然支持，连击两次即可。
+
+## 创建用户
+提前创建用户：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859508508165681152_395407.png)
+
+防止进入之后创建用户需要密码复杂度要求。
+## 开始安装
+配置好之后，正式开始安装：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859508606631161856_395407.png)
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859509344048525312_395407.png)
+
+等到一段时间后，即可安装完成：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859513579989381120_395407.png)
+
+重启之后，进入操作系统登录界面：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859513762525491200_395407.png)
+
+进入系统后，映入眼帘的是一个大大的 10：
+
+![](https://oss-emcsprod-public.modb.pro/image/editor/20241121-1859513935943184384_395407.png)
+
+至此，RHEL 10.0 Beta 版就安装完成了！
+
+# 新版体验
+## 基本信息
+使用 ssh 工具连接主机后，查看一些基础的信息：
+```bash
+-- 系统版本信息
+root@rhel10:~# cat /etc/os-release 
+NAME="Red Hat Enterprise Linux"
+VERSION="10.0 (Coughlan)"
+ID="rhel"
+ID_LIKE="centos fedora"
+VERSION_ID="10.0"
+PLATFORM_ID="platform:el10"
+PRETTY_NAME="Red Hat Enterprise Linux 10.0 Beta (Coughlan)"
+ANSI_COLOR="0;31"
+LOGO="fedora-logo-icon"
+CPE_NAME="cpe:/o:redhat:enterprise_linux:10::baseos"
+HOME_URL="https://www.redhat.com/"
+VENDOR_NAME="Red Hat"
+VENDOR_URL="https://www.redhat.com/"
+DOCUMENTATION_URL="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/10"
+BUG_REPORT_URL="https://issues.redhat.com/"
+
+REDHAT_BUGZILLA_PRODUCT="Red Hat Enterprise Linux 10"
+REDHAT_BUGZILLA_PRODUCT_VERSION=10.0
+REDHAT_SUPPORT_PRODUCT="Red Hat Enterprise Linux"
+REDHAT_SUPPORT_PRODUCT_VERSION="10.0 Beta"
+
+-- glibc 版本
+root@rhel10:~# ldd --version
+ldd (GNU libc) 2.39
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+Written by Roland McGrath and Ulrich Drepper.
+
+-- OpenSSH 和 OpenSSL 版本
+root@rhel10:~# ssh -V
+OpenSSH_9.8p1, OpenSSL 3.2.2 4 Jun 2024
+
+-- 磁盘分区
+root@rhel10:~# lsblk 
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom  
+nvme0n1       259:0    0   50G  0 disk 
+├─nvme0n1p1   259:1    0  600M  0 part /boot/efi
+├─nvme0n1p2   259:2    0    1G  0 part /boot
+└─nvme0n1p3   259:3    0 48.4G  0 part 
+  ├─rhel-root 253:0    0 43.4G  0 lvm  /
+  └─rhel-swap 253:1    0    5G  0 lvm  [SWAP]
+
+
+```
+## 配置本地软件源
+配置本地软件源：
+```bash
+## 挂载本地 ISO 镜像
+root@rhel10:~# mount /dev/sr0 /mnt/
+mount: /mnt: WARNING: source write-protected, mounted read-only.
+
+## 一键配置本地源
+## 备份系统初始配置文件
+mkdir -p /etc/yum.repos.d/bak
+mv /etc/yum.repos.d/* /etc/yum.repos.d/bak
+## 一键配置软件源，默认 ISO 安装镜像挂载在 /mnt 目录下
+cat <<-EOF > /etc/yum.repos.d/local.repo
+[BaseOS]
+name=BaseOS
+baseurl=file:///mnt/BaseOS
+enabled=1
+gpgcheck=0
+[AppStream]
+name=AppStream
+baseurl=file:///mnt/AppStream
+enabled=1
+gpgcheck=0
+EOF
+## 查看配置好的软件源
+cat /etc/yum.repos.d/local.repo
+```
+尝试安装软件包：
+```bash
+root@rhel10:/mnt# yum install -y libnsl*
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use "rhc" or "subscription-manager" to register.
+
+Last metadata expiration check: 0:00:21 ago on Fri 22 Nov 2024 12:36:38 AM CST.
+Dependencies resolved.
+=============================================================================================================================================================================================================================================================================================================================
+ Package                                                                     Architecture                                                                Version                                                                           Repository                                                                   Size
+=============================================================================================================================================================================================================================================================================================================================
+Installing:
+ libnsl                                                                      x86_64                                                                      2.39-22.el10                                                                      BaseOS                                                                      150 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================================================================================================
+Install  1 Package
+
+Total size: 150 k
+Installed size: 102 k
+Downloading Packages:
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                                                                                                                                                     1/1 
+  Installing       : libnsl-2.39-22.el10.x86_64                                                                                                                                                                                                                                                                          1/1 
+  Running scriptlet: libnsl-2.39-22.el10.x86_64                                                                                                                                                                                                                                                                          1/1 
+Installed products updated.
+
+Installed:
+  libnsl-2.39-22.el10.x86_64                                                                                                                                                                                                                                                                                                 
+
+Complete!
+```
+软件源配置验证正常，配置方式与 9 保持一致，且 yum 命令依然可以使用。
+
+## VNC
+查看 vnc 是否被移除：
+```bash
+root@rhel10:/mnt# yum install -y tigervnc*
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use "rhc" or "subscription-manager" to register.
+
+BaseOS                                                                                                                                                                                                                                                                                       107 MB/s | 1.5 MB     00:00    
+AppStream                                                                                                                                                                                                                                                                                    110 MB/s | 1.3 MB     00:00    
+No match for argument: tigervnc*
+Error: Unable to find a match: tigervnc*
+```
+果然，不再支持 VNC 软件安装，以后远程图形化安装数据库该何去何从？
+
+# 写在最后
+大家对 RHEL10 感兴趣的都可以安装玩玩~
+
+**安装镜像以及更多详细内容可以参考官方文档**：
+- [Red Hat Enterprise Linux 10 beta is here. Download now.](https://developers.redhat.com/products/rhel/download)
+- [Read Red Hat Enterprise Linux 10 beta release notes.](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10-beta/html/10.0_beta_release_notes/index)
+
+无法下载和访问红帽官网的可以在公众号：**Lucifer三思而后行** 回复：**RHEL10** 获取安装镜像和版本文档。
+
+---
+
+# 往期精彩文章
+>[Oracle 数据库启动过程之 nomount 详解](https://mp.weixin.qq.com/s/9NSZQlzcODE5fqmgYECf4w)    
+[Oracle RAC 修改系统时区避坑指南（深挖篇）](https://mp.weixin.qq.com/s/oKtZgbh5uLO2dyNtaGYp3w)    
+[Ubuntu 22.04 一键安装 Oracle 11G RAC](https://mp.weixin.qq.com/s/_srbpbXyQHSQow_5U_aUHw)    
+[使用 dbops 快速部署 MySQL 数据库](https://mp.weixin.qq.com/s/j9H5D1YVz2IketkmCqQKkA)   
+[Oracle RAC 启动顺序，你真的了解吗？](https://mp.weixin.qq.com/s/8Iab3QpvdIMCCsDycJ-kkA)   
+[达梦数据库一键安装脚本（免费）](https://mp.weixin.qq.com/s/DvowNh7ncV1OWs_Vpv5SSg)    
+[一篇文章让你彻底掌握 Python](https://mp.weixin.qq.com/s/eH4oe3VfP3QQpqHsH620kQ) 🔥           
+[一篇文章让你彻底掌握 Python](https://mp.weixin.qq.com/s/eH4oe3VfP3QQpqHsH620kQ)   
+[一篇文章让你彻底掌握 Shell](https://mp.weixin.qq.com/s/GmSqHJiBToncvcpFAJUZbw) 🔥          
+[Oracle 监控 EMCC 13.5 安装部署超详细教程](https://mp.weixin.qq.com/s/0W-53x2eGIY9uaX_RQrI2g) 🔥    
+[Oracle 一键巡检自动生成 Word 报告](https://mp.weixin.qq.com/s/0xFe5m1DQ0ucT2_266hsrA) 🔥      
+[Oracle一键安装脚本的 21 个疑问与解答](https://mp.weixin.qq.com/s/gv6t97FFyMsd6e4GH1HAwQ) 🔥      
+[Oracle一键巡检脚本的 21 个疑问与解答](https://mp.weixin.qq.com/s/4zI73auIUhwSRb7qL3UIfw) 🔥      
+[全网首发：Oracle 23ai 一键安装脚本](https://mp.weixin.qq.com/s/UL0BSMCAZrOQgCoWpDMGew) 🔥      
+[Oracle 19C 最新 RU 补丁 19.24 ，一键安装！](https://mp.weixin.qq.com/s/T7GbpwhnMugzk7PB6hAoJQ) 🔥       
+[Oracle Linux 6 一键安装 Oracle 11GR2 RAC](https://mp.weixin.qq.com/s/uicyzHfgS2TwleocXJEIrA)    
+[Oracle Linux 7.9 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/dT4tFMYVZ3mh49CI6V3YEA)    
+[Oracle Linux 8.9 一键安装 Oracle 19C RAC](https://mp.weixin.qq.com/s/FHXYiZBPn3XpKOM6ZqlU1A)    
+[Oracle Linux 9.4(aarch64) 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/cTuTUE-oaO-tKZ72F2WjAA) 🔥        
+[openEuler 20.03 LTS SP4 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/uJwEPOG22fhQcC6cTLfN1Q) 🔥        
+[openEuler 22.03 LTS SP4 一键安装 Oracle 19C RAC](https://mp.weixin.qq.com/s/sx1E4GIvIeQXp2vGMmVr2A)    
+[RHEL 7.9 一键安装 Oracle 19C 19.23 RAC](https://mp.weixin.qq.com/s/mUHqU5hQ9GdH2bKuClPt5A)    
+[Redhat 8.4 一键安装 Oracle 11GR2](https://mp.weixin.qq.com/s/fnuHKotjj_S8_0EfUkWI4Q)    
+[RedHat 9.4(aarch64) 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/cQJ6gP1bM_7m0H5-Dha4TA)    
+[龙蜥 Anolis 7.9 一键安装 Oracle 19C 19.23](https://mp.weixin.qq.com/s/bJtBpzyG_NAhU-0vov1WmQ)    
+[龙蜥 Anolis OS 8.8 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/_4-anPhn9wThtdAqqHIH5w)    
+[SUSE 15 SP5 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/N2J9JxZ7l9elG1L1NV7ynA)    
+[统信 UOS V20 1070(a) 一键安装 Oracle 11GR2](https://mp.weixin.qq.com/s/SSmLvx2wDzhzsQY6f5Q5Rg)    
+[Ubuntu 22.04 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/0-q9mLR48abGUbZUODj7xw)    
+[Ubuntu 14.04 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/Y6fFi3Nth0NA5HGq2LjubQ)    
+[银河麒麟 Kylin V10 SP3 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/EVNaKhH53YN885gk_Ik_Xg) 🔥       
+[银河麒麟 Kylin V10 SP3 一键安装 Oracle 11GR2 RAC](https://mp.weixin.qq.com/s/IZ_VYoDOxzSLzsQo8aJTIw)    
+[Oracle DataGuard GAP 修复手册](https://mp.weixin.qq.com/s/Trt7gYkQVoL5A803WlDL6Q) 🔥       
+[优化 Oracle：最佳实践与开发规范](https://mp.weixin.qq.com/s/DysIcb-p11j56d3YtlqpcQ)    
+[DBA 必备：Linux 软件源配置全攻略](https://mp.weixin.qq.com/s/SmncWuYAubj0tnOw35aJGA) 🔥       
+[Linux 一键配置时钟同步全攻略](https://mp.weixin.qq.com/s/yvth1vorP3JjUp3g3vPBAQ) 🔥       
+[Starwind 配置 ISCSI 共享存储](https://mp.weixin.qq.com/s/xjYZmGcwshbJBICcr0xvBw)    
+[SUSE 15 SP3 安装 Oracle 19C RAC 数据库](https://mp.weixin.qq.com/s/JMMzOa6dN6ytAUkcy7I2jQ)    
+[达梦 8 数据库安装手册](https://mp.weixin.qq.com/s/KEobA1FAx4Uod3uBGkJ9-A) 🔥       
+[Oracle 12CR2 RAC 安装避坑宝典](https://mp.weixin.qq.com/s/KlP4IM4O7sHVvSNJ9rNXEA)    
+[Linux7 安装 Oracle 19C RAC 详细图文教程](https://mp.weixin.qq.com/s/vNZbH5QsiSWrdtJcqP2MWg) 🔥       
+[Oracle ADG 搭建 RAC to Single 详细教程](https://mp.weixin.qq.com/s/mA5MPcykF-eytChoUAhwnA)    
+[Oracle DataGuard GAP 修复手册](https://mp.weixin.qq.com/s/Trt7gYkQVoL5A803WlDL6Q) 🔥        
+[Oracle 分区表之在线重定义](https://mp.weixin.qq.com/s/NYQ8TPMktc6u8jMtnI_Gpg)    
+[AutoUpgrade 快速升级 Oracle 数据库](https://mp.weixin.qq.com/s/ebpMdmozKOR6XZSMKsG2DQ)    
+[Oracle 数据库巡检命令手册](https://mp.weixin.qq.com/s/vLtJ2zH_TnyQxKyVddzMRg) 🔥       
+[Oracle 数据坏块的 N 种修复方式](https://mp.weixin.qq.com/s/0w66O5Ugx-TX7e_trE5ZBQ) 🔥       
+[数据库 SQL 开发入门教程](https://mp.weixin.qq.com/s/92mBTibjSGNywnwOYIFuqg)    
+[超全 Linux 基础命令总结](https://mp.weixin.qq.com/s/UwVlWxEUBE4OEq4a91dyfg) 🔥       
+[VMware 虚拟机安装 Linux 系统](https://mp.weixin.qq.com/s/-gTiGVWFZV0tkw0yZyI2bQ)    
+[Linux 安装 MySQL 详细教程](https://mp.weixin.qq.com/s/dHSaDSrUqxFG9E2dMuTmxg)    
+[教你玩转 SQLPLUS，工作效率提升 200%](https://mp.weixin.qq.com/s/KaxEN6qxLDJWb7paOvcffw)    
+
+---
+
+感谢您的阅读，这里是 **Lucifer三思而后行**，欢迎**点赞+关注**，我会持续分享数据库知识、运维技巧。

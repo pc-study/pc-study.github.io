@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "hexo": "^7.3.0",
+    "hexo-cli": "^4.3.2",
+    "hexo-deployer-git": "^4.0.0",
+    "hexo-generator-searchdb": "^1.5.0",
+    "hexo-generator-sitemap": "^3.0.1",
+    "hexo-renderer-pug": "^3.0.0",
+    "hexo-renderer-stylus": "^3.0.1"
+  }
+}

@@ -1,0 +1,287 @@
+---
+title: 阿里龙蜥 Anolis 8.9(aarch64) 一键安装 Oracle 19C ARM 单机
+date: 2024-07-04 09:18:21
+tags: [墨力计划]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/1808144566678294528
+---
+
+>大家好，这里是 **Lucifer三思而后行**，专注于提升数据库运维效率。
+
+@[TOC](目录)
+
+# 前言
+Oracle 一键安装脚本，演示 阿里龙蜥 Anolis 8.9(aarch64) 一键安装 Oracle 19C 单机（全程无需人工干预）。
+
+>**⭐️ <font color='red'>脚本下载地址</font>：[Shell脚本安装Oracle数据库](https://www.modb.pro/course/148)**
+>**⭐️ <font color='red'>更多教程参考</font>：[Oracle 一键安装脚本实操合集，持续更新中！！！](https://www.modb.pro/db/1773583263184031744)**
+
+# 前置准备
+- 1、系统组安装好操作系统（支持最小化安装）
+- 2、网络组配置好主机网络，通常只需要一个公网 IP 地址
+- 3、DBA 创建软件目录：`mkdir /soft`
+- 4、DBA 上传 Oracle 安装介质（基础包，补丁包）到 /soft 目录下
+- 5、DBA 上传 Oracle 一键安装脚本到 /soft 目录下，授予脚本执行权限：`chmod +x OracleshellInstall`
+- 6、DBA 挂载主机 ISO 镜像，这里只需要 mount 上即可（这个很简单，不了解的可以百度下）
+- 7、根据脚本安装脚本以及实际情况，配置好脚本的安装参数，在 /soft 目录下执行一键安装即可。
+
+# 环境信息
+```bash
+# 主机版本
+[root@anolis8-arm soft]# cat /etc/os-release 
+NAME="Anolis OS"
+VERSION="8.9"
+ID="anolis"
+ID_LIKE="rhel fedora centos"
+VERSION_ID="8.9"
+PLATFORM_ID="platform:an8"
+PRETTY_NAME="Anolis OS 8.9"
+ANSI_COLOR="0;31"
+HOME_URL="https://openanolis.cn/"
+
+# CPU 架构
+[root@anolis8-arm soft]# uname -m
+aarch64
+
+# 网络信息
+[root@anolis8-arm soft]# ip a
+2: enp0s5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:1c:42:52:28:f4 brd ff:ff:ff:ff:ff:ff
+    inet 10.211.55.12/24 brd 10.211.55.255 scope global dynamic noprefixroute enp0s5
+       valid_lft 977sec preferred_lft 977sec
+    inet6 fdb2:2c26:f4e4:0:21c:42ff:fe52:28f4/64 scope global dynamic noprefixroute 
+       valid_lft 2591558sec preferred_lft 604358sec
+    inet6 fe80::21c:42ff:fe52:28f4/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+
+# 挂载本地 ISO 镜像
+[root@anolis8-arm soft]# mount /dev/sr0 /mnt/
+mount: /mnt: WARNING: device write-protected, mounted read-only.
+[root@anolis8-arm soft]# mount | grep iso9660 | grep -v "/run/media"
+/dev/sr0 on /mnt type iso9660 (ro,relatime,nojoliet,check=s,map=n,blocksize=2048,iocharset=utf8)
+[root@anolis8-arm soft]# df -h|grep /mnt
+/dev/sr0              13G   13G     0  100% /mnt
+
+# 安装包存放在 /soft 目录下
+[root@anolis8-arm soft]# ll
+-rwx------ 1 root root 2415583176 7月   2 21:09 LINUX.ARM64_1919000_db_home.zip
+-rwxr-xr-x 1 root root     233626 7月   2 21:07 OracleShellInstall
+```
+确保安装环境准备完成后，即可执行一键安装。
+
+# 安装命令
+使用标准生产环境安装参数：
+```bash
+# 根据脚本 README 或者 -h 命令提示，编辑好一键安装命令，进入 /soft 目录执行安装：
+[root@anolis8-arm ~]# cd /soft/
+[root@anolis8-arm soft]# chmod +x OracleShellInstall 
+
+./OracleShellInstall -lf enp0s5 `# 主机网卡名称`\
+-n anolis8-arm `# 主机名`\
+-op 'P@ssw0rd!123' `# 主机 oracle 用户密码`\
+-d /u01 `# Oracle 软件安装基础目录`\
+-ord /oradata `# 数据库文件存放目录`\
+-o lucifer `# 数据库名称`\
+-dp 'Passw0rd#PST' `# sys/system 用户密码`\
+-ds AL32UTF8 `# 数据库字符集`\
+-ns AL16UTF16 `# 国家字符集`\
+-redo 10 `# 在线重做日志大小（M）`\
+-opd Y `# 是否优化数据库`
+```
+
+# 安装过程
+```bash
+  ███████                             ██          ████████ ██               ██  ██ ██                    ██              ██  ██
+  ██░░░░░██                           ░██         ██░░░░░░ ░██              ░██ ░██░██                   ░██             ░██ ░██
+ ██     ░░██ ██████  ██████    █████  ░██  █████ ░██       ░██       █████  ░██ ░██░██ ███████   ██████ ██████  ██████   ░██ ░██
+░██      ░██░░██░░█ ░░░░░░██  ██░░░██ ░██ ██░░░██░█████████░██████  ██░░░██ ░██ ░██░██░░██░░░██ ██░░░░ ░░░██░  ░░░░░░██  ░██ ░██
+░██      ░██ ░██ ░   ███████ ░██  ░░  ░██░███████░░░░░░░░██░██░░░██░███████ ░██ ░██░██ ░██  ░██░░█████   ░██    ███████  ░██ ░██
+░░██     ██  ░██    ██░░░░██ ░██   ██ ░██░██░░░░        ░██░██  ░██░██░░░░  ░██ ░██░██ ░██  ░██ ░░░░░██  ░██   ██░░░░██  ░██ ░██
+ ░░███████  ░███   ░░████████░░█████  ███░░██████ ████████ ░██  ░██░░██████ ███ ███░██ ███  ░██ ██████   ░░██ ░░████████ ███ ███
+  ░░░░░░░   ░░░     ░░░░░░░░  ░░░░░  ░░░  ░░░░░░ ░░░░░░░░  ░░   ░░  ░░░░░░ ░░░ ░░░ ░░ ░░░   ░░ ░░░░░░     ░░   ░░░░░░░░ ░░░ ░░░ 
+
+
+注意：本脚本仅用于新服务器上实施部署数据库使用，严禁在已运行数据库的主机上执行，以免发生数据丢失或者损坏，造成不可挽回的损失！！！                                                                                  
+
+请选择安装模式 [单机(si)/单机ASM(sa)/集群(rac)] : si
+
+数据库安装模式: single                                                                           
+
+请选择数据库版本 [11/12/19/21] : 19
+
+数据库版本:     19                                                                               
+
+!!! 免责声明：当前操作系统版本是 [ Anolis OS 8.9 ] 不在 Oracle 官方支持列表，本脚本只负责安装，请确认是否继续安装 (Y/N): [Y] 
+
+正在进行安装前检查，请稍等......                                                                                  
+
+正在检测安装包 /soft/LINUX.ARM64_1919000_db_home.zip 的 MD5 值是否正确，请稍等......                                                                                  
+
+OracleShellInstall 开始安装，详细安装过程可查看日志： tail -2000f /soft/print_shell_install_20240702211854.log                                                                                  
+正在获取操作系统信息......已完成 (耗时: 1 秒)
+正在配置本地软件源......已完成 (耗时: 1 秒)
+正在安装依赖包......已完成 (耗时: 42 秒)
+正在禁用防火墙......已完成 (耗时: 1 秒)
+正在禁用 selinux......已完成 (耗时: 1 秒)
+正在配置 nsyctl......已完成 (耗时: 1 秒)
+正在配置主机名和 /etc/hosts......已完成 (耗时: 0 秒)
+正在创建用户和组......已完成 (耗时: 1 秒)
+正在创建安装目录......已完成 (耗时: 1 秒)
+正在配置透明大页 && NUMA && 磁盘 IO 调度器......已完成 (耗时: 1 秒)
+正在配置操作系统参数 sysctl......已完成 (耗时: 1 秒)
+正在配置 RemoveIPC......已完成 (耗时: 1 秒)
+正在配置用户限制 limit......已完成 (耗时: 1 秒)
+正在配置 shm 目录......已完成 (耗时: 1 秒)
+正在配置用户环境变量......已完成 (耗时: 1 秒)
+正在解压 Oracle 安装包以及补丁......已完成 (耗时: 44 秒)
+正在安装 Oracle 软件以及补丁......已完成 (耗时: 41 秒)
+正在创建监听......已完成 (耗时: 1 秒)
+正在创建数据库......已完成 (耗时: 271 秒)
+正在优化数据库......已完成 (耗时: 5 秒)
+
+恭喜！Oracle 一键安装执行完成 (耗时: 417 秒)，现在是否重启主机：[Y/N] Y
+
+正在重启当前节点主机...... 
+```
+
+# 连接测试
+查看系统版本：
+```bash
+[root@anolis8-arm:/root]# cat /etc/os-release 
+NAME="Anolis OS"
+VERSION="8.9"
+ID="anolis"
+ID_LIKE="rhel fedora centos"
+VERSION_ID="8.9"
+PLATFORM_ID="platform:an8"
+PRETTY_NAME="Anolis OS 8.9"
+ANSI_COLOR="0;31"
+HOME_URL="https://openanolis.cn/"
+```
+查看补丁信息：
+```bash
+[oracle@anolis8-arm:/home/oracle]$ sqlplus -v
+
+SQL*Plus: Release 19.0.0.0.0 - Production
+Version 19.19.0.0.0
+
+[oracle@anolis8-arm:/home/oracle]$ opatch lspatches
+此 Oracle 主目录中未安装任何临时补丁程序 "/u01/app/oracle/product/19.3.0/db".
+
+OPatch succeeded.
+```
+查看监听：
+```bash
+[oracle@anolis8-arm:/home/oracle]$ lsnrctl stat
+
+LSNRCTL for Linux: Version 19.0.0.0.0 - Production on 02-JUL-2024 21:27:51
+
+Copyright (c) 1991, 2023, Oracle.  All rights reserved.
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=anolis8-arm)(PORT=1521)))
+STATUS of the LISTENER
+------------------------
+Alias                     LISTENER
+Version                   TNSLSNR for Linux: Version 19.0.0.0.0 - Production
+Start Date                02-JUL-2024 21:26:43
+Uptime                    0 days 0 hr. 1 min. 7 sec
+Trace Level               off
+Security                  ON: Local OS Authentication
+SNMP                      OFF
+Listener Parameter File   /u01/app/oracle/product/19.3.0/db/network/admin/listener.ora
+Listener Log File         /u01/app/oracle/diag/tnslsnr/anolis8-arm/listener/alert/log.xml
+Listening Endpoints Summary...
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=anolis8-arm)(PORT=1521)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC1521)))
+Services Summary...
+Service "lucifer" has 1 instance(s).
+  Instance "lucifer", status READY, has 1 handler(s) for this service...
+Service "luciferXDB" has 1 instance(s).
+  Instance "lucifer", status READY, has 1 handler(s) for this service...
+The command completed successfully
+```
+连接数据库：
+```bash
+[oracle@anolis8-arm:/home/oracle]$ sas
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Tue Jul 2 21:28:02 2024
+Version 19.19.0.0.0
+
+Copyright (c) 1982, 2023, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.19.0.0.0
+
+sys@LUCIFER 2024-07-02 21:28:02> show parameter name
+
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+cdb_cluster_name                     string
+cell_offloadgroup_name               string
+db_file_name_convert                 string
+db_name                              string      lucifer
+db_unique_name                       string      lucifer
+global_names                         boolean     FALSE
+instance_name                        string      lucifer
+lock_name_space                      string
+log_file_name_convert                string
+pdb_file_name_convert                string
+processor_group_name                 string
+service_names                        string      lucifer
+```
+数据库可以正常连接。
+
+---
+
+# 往期精彩文章推荐
+
+>[一篇文章让你彻底掌握 Shell](https://mp.weixin.qq.com/s/GmSqHJiBToncvcpFAJUZbw) 🔥      
+[Oracle 一键巡检自动生成 Word 报告](https://mp.weixin.qq.com/s/0xFe5m1DQ0ucT2_266hsrA) 🔥      
+[Oracle一键安装脚本的 21 个疑问与解答](https://mp.weixin.qq.com/s/gv6t97FFyMsd6e4GH1HAwQ) 🔥      
+[Oracle一键巡检脚本的 21 个疑问与解答](https://mp.weixin.qq.com/s/4zI73auIUhwSRb7qL3UIfw) 🔥      
+[全网首发：Oracle 23ai 一键安装脚本](https://mp.weixin.qq.com/s/UL0BSMCAZrOQgCoWpDMGew) 🔥      
+[Oracle 19C 最新 RU 补丁 19.24 ，一键安装！](https://mp.weixin.qq.com/s/T7GbpwhnMugzk7PB6hAoJQ) 🔥       
+[Oracle Linux 6 一键安装 Oracle 11GR2 RAC](https://mp.weixin.qq.com/s/uicyzHfgS2TwleocXJEIrA)    
+[Oracle Linux 7.9 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/dT4tFMYVZ3mh49CI6V3YEA)    
+[Oracle Linux 8.9 一键安装 Oracle 19C RAC](https://mp.weixin.qq.com/s/FHXYiZBPn3XpKOM6ZqlU1A)    
+[Oracle Linux 9.4(aarch64) 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/cTuTUE-oaO-tKZ72F2WjAA) 🔥        
+[openEuler 20.03 LTS SP4 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/uJwEPOG22fhQcC6cTLfN1Q) 🔥        
+[openEuler 22.03 LTS SP4 一键安装 Oracle 19C RAC](https://mp.weixin.qq.com/s/sx1E4GIvIeQXp2vGMmVr2A)    
+[RHEL 7.9 一键安装 Oracle 19C 19.23 RAC](https://mp.weixin.qq.com/s/mUHqU5hQ9GdH2bKuClPt5A)    
+[Redhat 8.4 一键安装 Oracle 11GR2](https://mp.weixin.qq.com/s/fnuHKotjj_S8_0EfUkWI4Q)    
+[RedHat 9.4(aarch64) 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/cQJ6gP1bM_7m0H5-Dha4TA)    
+[龙蜥 Anolis 7.9 一键安装 Oracle 19C 19.23](https://mp.weixin.qq.com/s/bJtBpzyG_NAhU-0vov1WmQ)    
+[龙蜥 Anolis OS 8.8 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/_4-anPhn9wThtdAqqHIH5w)    
+[SUSE 15 SP5 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/N2J9JxZ7l9elG1L1NV7ynA)    
+[统信 UOS V20 1070(a) 一键安装 Oracle 11GR2](https://mp.weixin.qq.com/s/SSmLvx2wDzhzsQY6f5Q5Rg)    
+[Ubuntu 22.04 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/0-q9mLR48abGUbZUODj7xw)    
+[Ubuntu 14.04 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/Y6fFi3Nth0NA5HGq2LjubQ)    
+[银河麒麟 Kylin V10 SP3 一键安装 Oracle 19C](https://mp.weixin.qq.com/s/EVNaKhH53YN885gk_Ik_Xg) 🔥       
+[银河麒麟 Kylin V10 SP3 一键安装 Oracle 11GR2 RAC](https://mp.weixin.qq.com/s/IZ_VYoDOxzSLzsQo8aJTIw)    
+[Oracle DataGuard GAP 修复手册](https://mp.weixin.qq.com/s/Trt7gYkQVoL5A803WlDL6Q) 🔥       
+[优化 Oracle：最佳实践与开发规范](https://mp.weixin.qq.com/s/DysIcb-p11j56d3YtlqpcQ)    
+[DBA 必备：Linux 软件源配置全攻略](https://mp.weixin.qq.com/s/SmncWuYAubj0tnOw35aJGA) 🔥       
+[Linux 一键配置时钟同步全攻略](https://mp.weixin.qq.com/s/yvth1vorP3JjUp3g3vPBAQ) 🔥       
+[Starwind 配置 ISCSI 共享存储](https://mp.weixin.qq.com/s/xjYZmGcwshbJBICcr0xvBw)    
+[SUSE 15 SP3 安装 Oracle 19C RAC 数据库](https://mp.weixin.qq.com/s/JMMzOa6dN6ytAUkcy7I2jQ)    
+[达梦 8 数据库安装手册](https://mp.weixin.qq.com/s/KEobA1FAx4Uod3uBGkJ9-A) 🔥       
+[Oracle 12CR2 RAC 安装避坑宝典](https://mp.weixin.qq.com/s/KlP4IM4O7sHVvSNJ9rNXEA)    
+[Linux7 安装 Oracle 19C RAC 详细图文教程](https://mp.weixin.qq.com/s/vNZbH5QsiSWrdtJcqP2MWg) 🔥       
+[Oracle ADG 搭建 RAC to Single 详细教程](https://mp.weixin.qq.com/s/mA5MPcykF-eytChoUAhwnA)    
+[Oracle DataGuard GAP 修复手册](https://mp.weixin.qq.com/s/Trt7gYkQVoL5A803WlDL6Q) 🔥        
+[Oracle 分区表之在线重定义](https://mp.weixin.qq.com/s/NYQ8TPMktc6u8jMtnI_Gpg)    
+[AutoUpgrade 快速升级 Oracle 数据库](https://mp.weixin.qq.com/s/ebpMdmozKOR6XZSMKsG2DQ)    
+[Oracle 数据库巡检命令手册](https://mp.weixin.qq.com/s/vLtJ2zH_TnyQxKyVddzMRg) 🔥       
+[Oracle 数据坏块的 N 种修复方式](https://mp.weixin.qq.com/s/0w66O5Ugx-TX7e_trE5ZBQ) 🔥       
+[数据库 SQL 开发入门教程](https://mp.weixin.qq.com/s/92mBTibjSGNywnwOYIFuqg)    
+[超全 Linux 基础命令总结](https://mp.weixin.qq.com/s/UwVlWxEUBE4OEq4a91dyfg) 🔥       
+[VMware 虚拟机安装 Linux 系统](https://mp.weixin.qq.com/s/-gTiGVWFZV0tkw0yZyI2bQ)    
+[Linux 安装 MySQL 详细教程](https://mp.weixin.qq.com/s/dHSaDSrUqxFG9E2dMuTmxg)    
+[教你玩转 SQLPLUS，工作效率提升 200%](https://mp.weixin.qq.com/s/KaxEN6qxLDJWb7paOvcffw)    
+
+---
+
+感谢您的阅读，这里是 **Lucifer三思而后行**，欢迎 **点赞+关注**，我会持续分享数据库知识、运维技巧。

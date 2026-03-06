@@ -1,0 +1,174 @@
+---
+title: [译] Oracle Database 19c 中的 LISTAGG DISTINCT
+date: 2022-01-06 16:01:22
+tags: [墨力计划,oracle,oracle 19c]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/232399
+---
+
+>原文地址：[https://oracle-base.com/articles/19c/listagg-distinct-19c](https://oracle-base.com/articles/19c/listagg-distinct-19c)
+原文作者：Tim Hall
+
+`LISTAGG` 函数是在 Oracle 11gR2 中引入的，以使字符串聚合更简单。在 Oracle 12cR2 中，它被扩展为包括溢出错误处理。Oracle 19c 更新了 LISTAGG 功能，通过 `DISTINCT` 关键字从结果中删除重复项。
+
+@[TOC](目录)
+
+# 配置
+本文中的示例使用下表：
+```sql
+-- DROP TABLE EMP PURGE;
+
+CREATE TABLE EMP (
+  EMPNO NUMBER(4) CONSTRAINT PK_EMP PRIMARY KEY,
+  ENAME VARCHAR2(10),
+  JOB VARCHAR2(9),
+  MGR NUMBER(4),
+  HIREDATE DATE,
+  SAL NUMBER(7,2),
+  COMM NUMBER(7,2),
+  DEPTNO NUMBER(2)
+);
+
+INSERT INTO EMP VALUES (7369,'SMITH','CLERK',7902,to_date('17-12-1980','dd-mm-yyyy'),800,NULL,20);
+INSERT INTO EMP VALUES (7499,'ALLEN','SALESMAN',7698,to_date('20-2-1981','dd-mm-yyyy'),1600,300,30);
+INSERT INTO EMP VALUES (7521,'WARD','SALESMAN',7698,to_date('22-2-1981','dd-mm-yyyy'),1250,500,30);
+INSERT INTO EMP VALUES (7566,'JONES','MANAGER',7839,to_date('2-4-1981','dd-mm-yyyy'),2975,NULL,20);
+INSERT INTO EMP VALUES (7654,'MARTIN','SALESMAN',7698,to_date('28-9-1981','dd-mm-yyyy'),1250,1400,30);
+INSERT INTO EMP VALUES (7698,'BLAKE','MANAGER',7839,to_date('1-5-1981','dd-mm-yyyy'),2850,NULL,30);
+INSERT INTO EMP VALUES (7782,'CLARK','MANAGER',7839,to_date('9-6-1981','dd-mm-yyyy'),2450,NULL,10);
+INSERT INTO EMP VALUES (7788,'SCOTT','ANALYST',7566,to_date('13-JUL-87','dd-mm-rr')-85,3000,NULL,20);
+INSERT INTO EMP VALUES (7839,'KING','PRESIDENT',NULL,to_date('17-11-1981','dd-mm-yyyy'),5000,NULL,10);
+INSERT INTO EMP VALUES (7844,'TURNER','SALESMAN',7698,to_date('8-9-1981','dd-mm-yyyy'),1500,0,30);
+INSERT INTO EMP VALUES (7876,'ADAMS','CLERK',7788,to_date('13-JUL-87', 'dd-mm-rr')-51,1100,NULL,20);
+INSERT INTO EMP VALUES (7900,'JAMES','CLERK',7698,to_date('3-12-1981','dd-mm-yyyy'),950,NULL,30);
+INSERT INTO EMP VALUES (7902,'FORD','ANALYST',7566,to_date('3-12-1981','dd-mm-yyyy'),3000,NULL,20);
+INSERT INTO EMP VALUES (7934,'MILLER','CLERK',7782,to_date('23-1-1982','dd-mm-yyyy'),1300,NULL,10);
+COMMIT;
+```
+# 问题
+该LISTAGG函数的默认操作如下所示：
+```sql
+COLUMN employees FORMAT A40
+
+SELECT deptno, LISTAGG(ename, ',') WITHIN GROUP (ORDER BY ename) AS employees
+FROM   emp
+GROUP BY deptno
+ORDER BY deptno;
+
+    DEPTNO EMPLOYEES
+---------- ----------------------------------------
+        10 CLARK,KING,MILLER
+        20 ADAMS,FORD,JONES,SCOTT,SMITH
+        30 ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+3 rows selected.
+
+SQL>
+```
+让我们将一些名为 “MILLER” 的额外人员添加到第 10 部门，以便在汇总列表中为我们提供重复项：
+```sql
+INSERT INTO emp VALUES (9998,'MILLER','ANALYST',7782,to_date('23-1-1982','dd-mm-yyyy'),1600,NULL,10);
+INSERT INTO emp VALUES (9999,'MILLER','MANADER',7782,to_date('23-1-1982','dd-mm-yyyy'),1500,NULL,10);
+COMMIT;
+```
+正如预期的那样，我们现在在部门 10 中看到名称“MILLER”的多个条目：
+```sql
+COLUMN employees FORMAT A40
+
+SELECT deptno, LISTAGG(ename, ',') WITHIN GROUP (ORDER BY ename) AS employees
+FROM   emp
+GROUP BY deptno
+ORDER BY deptno;
+
+    DEPTNO EMPLOYEES
+---------- ----------------------------------------
+        10 CLARK,KING,MILLER,MILLER,MILLER
+        20 ADAMS,FORD,JONES,SCOTT,SMITH
+        30 ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+3 rows selected.
+
+SQL>
+```
+如果这就是我们所期待的，那就太好了。如果我们想删除重复项，我们该怎么做？
+# 解决方案：19c之前
+19C 之前，我们可以通过多种方式解决这个问题。在下面的示例中，我们使用 `ROW_NUMBER` 分析函数删除任何重复项，然后使用常规 `LISTAGG` 函数聚合数据。
+```sql
+COLUMN employees FORMAT A40
+
+SELECT e2.deptno, LISTAGG(e2.ename, ',') WITHIN GROUP (ORDER BY e2.ename) AS employees
+FROM   (SELECT e.*,
+               ROW_NUMBER() OVER (PARTITION BY e.deptno, e.ename ORDER BY e.empno) AS myrank
+        FROM   emp e) e2
+WHERE  e2.myrank = 1
+GROUP BY e2.deptno
+ORDER BY e2.deptno;
+
+    DEPTNO EMPLOYEES
+---------- ----------------------------------------
+        10 CLARK,KING,MILLER
+        20 ADAMS,FORD,JONES,SCOTT,SMITH
+        30 ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+3 rows selected.
+
+SQL>
+```
+或者，我们可以 `DISTINCT` 在内联视图中使用来删除重复的行，然后使用传统的 `LISTAGG` 函数调用来聚合数据。
+```sql
+COLUMN employees FORMAT A40
+
+SELECT e2.deptno, LISTAGG(e2.ename, ',') WITHIN GROUP (ORDER BY e2.ename) AS employees
+FROM   (SELECT DISTINCT e.deptno, e.ename
+        FROM   emp e) e2
+GROUP BY e2.deptno
+ORDER BY e2.deptno;
+
+    DEPTNO EMPLOYEES
+---------- ----------------------------------------
+        10 CLARK,KING,MILLER
+        20 ADAMS,FORD,JONES,SCOTT,SMITH
+        30 ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+3 rows selected.
+
+SQL>
+```
+# 解决方案：19c 以后
+Oracle 19c 引入了一个更简单的解决方案。我们现在可以 `DISTINCT` 直接在 `LISTAGG` 函数调用中包含关键字：
+```sql
+COLUMN employees FORMAT A40
+
+SELECT deptno, LISTAGG(DISTINCT ename, ',') WITHIN GROUP (ORDER BY ename) AS employees
+FROM   emp
+GROUP BY deptno
+ORDER BY deptno;
+
+    DEPTNO EMPLOYEES
+---------- ----------------------------------------
+        10 CLARK,KING,MILLER
+        20 ADAMS,FORD,JONES,SCOTT,SMITH
+        30 ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+3 rows selected.
+
+SQL>
+```
+默认功能是包含所有结果，我们可以使用 ALL 关键字明确表达。
+```sql
+SELECT deptno, LISTAGG(ALL ename, ',') WITHIN GROUP (ORDER BY ename) AS employees
+FROM   emp
+GROUP BY deptno
+ORDER BY deptno;
+
+    DEPTNO EMPLOYEES
+---------- ----------------------------------------
+        10 CLARK,KING,MILLER,MILLER,MILLER
+        20 ADAMS,FORD,JONES,SCOTT,SMITH
+        30 ALLEN,BLAKE,JAMES,MARTIN,TURNER,WARD
+
+3 rows selected.
+
+SQL>
+```

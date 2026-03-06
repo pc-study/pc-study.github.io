@@ -1,0 +1,104 @@
+---
+title: Oracle 临时表空间 SQL语句
+date: 2021-10-03 12:54:27
+tags: [每天一个dba小知识]
+author: 三笠丶
+source: 墨天轮
+source_url: https://www.modb.pro/db/125790
+---
+
+以下总结了关于 Oracle 数据库临时表空间的相关 SQL 语句：
+
+**Oracle 临时表空间创建和添加数据文件：**
+```sql
+--创建临时表空间 tempdata
+create temporary tablespace tempdata tempfile '/oradata/orcl/tempdata01.dbf' size 30g autoextend off;
+--新增临时表空间数据文件
+alter tablespace tempdata add tempfile '/oradata/orcl/tempdata02.dbf' size 30g autoextend off;
+--删除临时表空间数据文件
+alter tablespace tempdata drop tempfile '/oradata/orcl/tempdata02.dbf' including datafiles;
+--调整临时表空间数据文件大小
+alter database tempfile '/oradata/orcl/tempdata01.dbf' resize 2G;
+--设置自动扩展
+alter database tempfile '/oradata/orcl/tempdata01.dbf' autoextend on;
+--切换默认临时表空间
+alter database default temporary tablespace tempdata;
+--删除临时表空间
+drop tablespace temp including contents and datafiles cascade constraints;
+--收缩临时表空间
+alter tablespace temp shrink space keep 8G;
+alter tablespace temp shrink tempfile '/oradata/orcl/tempdata01.dbf';
+```
+
+**查看当前默认临时表空间：**
+```sql
+SELECT PROPERTY_NAME, PROPERTY_VALUE FROM DATABASE_PROPERTIES WHERE PROPERTY_NAME='DEFAULT_TEMP_TABLESPACE';
+```
+
+**查询temp表空间使用率：**
+```sql
+select  df.tablespace_name "Tablespace",
+       df.totalspace "Total(MB)",
+       nvl(FS.UsedSpace, 0)  "Used(MB)",
+       (df.totalspace - nvl(FS.UsedSpace, 0)) "Free(MB)",
+       round(100 * (1-( nvl(fs.UsedSpace, 0) / df.totalspace)), 2) "Pct. Free(%)"
+FROM  (SELECT tablespace_name, round(SUM(bytes) / 1048576) TotalSpace
+        FROM   dba_TEMP_files
+        GROUP  BY tablespace_name) df,
+       (SELECT tablespace_name, ROUND(SUM(bytes_used) / 1024 / 1024)  UsedSpace
+        FROM   gV$temp_extent_pool
+        GROUP  BY tablespace_name) fs  WHERE  df.tablespace_name = fs.tablespace_name(+)
+```
+
+**查看临时表空间对应的临时文件的使用情况：**
+```sql
+SELECT TABLESPACE_NAME         AS TABLESPACE_NAME    ,
+    BYTES_USED/1024/1024/1024    AS TABLESAPCE_USED  ,
+    BYTES_FREE/1024/1024/1024  AS TABLESAPCE_FREE
+FROM V$TEMP_SPACE_HEADER
+ORDER BY 1 DESC;
+```
+
+**查询实时使用temp表空间的sql_id和sid：**
+```sql
+set linesize 260 pagesize 1000
+col machine for a40
+col program for a40
+SELECT se.username,
+       sid,
+       serial#,
+       se.sql_id
+       machine,
+       program,
+       tablespace,
+       segtype,
+       (su.BLOCKS*8/1024/1024) GB
+  FROM v$session se, v$sort_usage su
+ WHERE se.saddr = su.session_addr
+ order by su.BLOCKS desc;
+
+/*需要注意的是这里查询sql_id要用v$session视图的sql_id，而不要用v$sort_usage视图的sql_id，v$sort_usage视图里面的sql_id是不准确的*/
+```
+
+**查询历史的temp表空间的使用的SQL_ID：**
+```sql
+select a.SQL_ID,
+       a.SAMPLE_TIME,
+       a.program,
+       sum(trunc(a.TEMP_SPACE_ALLOCATED / 1024 / 1024)) MB
+  from v$active_session_history a
+ where TEMP_SPACE_ALLOCATED is not null 
+ and sample_time between
+ to_date('&date1', 'yyyy-mm-dd hh24:mi:ss') and
+ to_date('&date2', 'yyyy-mm-dd hh24:mi:ss')
+ group by a.sql_id,a.SAMPLE_TIME,a.PROGRAM
+ order by 2 asc,4 desc;
+```
+
+---
+
+本次分享到此结束啦~
+
+如果觉得文章对你有帮助，<font color='red'>**点赞、收藏、关注、评论**</font>，一键四连支持，你的支持就是我创作最大的动力。
+
+❤️ 技术交流可以 关注公众号：**Lucifer三思而后行** ❤️
